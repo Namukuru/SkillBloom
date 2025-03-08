@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Login from "./components/Login"; // Import the Login component
+import Login from "./components/Login";
+import Signup from "./components/Signup";
 
 function App() {
   const [message, setMessage] = useState("");
@@ -18,6 +19,7 @@ function App() {
 
       {/* Add the Login component here */}
       <Login />
+      <Signup />
     </div>
   );
 }
