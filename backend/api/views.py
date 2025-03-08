@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from .serializers import UserSerializer
 
 @api_view(['GET'])
 def hello_world(request):
@@ -31,13 +32,8 @@ def login_view(request):
 
 @api_view(['POST'])
 def register_view(request):
-    username = request.data.get('username')
-    password = request.data.get('password')
-
-    if User.objects.filter(username=username).exists():
-        return Response({'error': 'Username already exists'}, status=400)
-    
-    user = User.objects.create_user(username=username, password=password)
-    token = get_tokens_for_user(user)
-    
-    return Response({'token': token, 'user': {'username': user.username}})
+    serializer = UserSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
