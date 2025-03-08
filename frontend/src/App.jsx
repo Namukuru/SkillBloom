@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Login from "./components/Login"; // Import the Login component
 
 function App() {
   const [message, setMessage] = useState("");
@@ -14,6 +15,9 @@ function App() {
     <div>
       <h1>Django + React</h1>
       <p>{message}</p>
+
+      {/* Add the Login component here */}
+      <Login />
     </div>
   );
 }
