@@ -35,6 +35,13 @@ class CustomUser(AbstractUser):
 
 
 class SkillMatch(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    teach_skill = models.CharField(max_length=255)
-    learn_skill = models.CharField(max_length=255)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)  # Fix
+    teach_skill = models.ForeignKey(
+        Skill, related_name="teachers", on_delete=models.CASCADE
+    )
+    learn_skill = models.ForeignKey(
+        Skill, related_name="learners", on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return f"{self.user.username} teaches {self.teach_skill} and learns {self.learn_skill}"

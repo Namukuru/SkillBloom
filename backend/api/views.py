@@ -10,7 +10,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 
-from backend.api.models import SkillMatch
+from api.models import Skill, SkillMatch
+from api.serializers import SkillSerializer
 
 
 @api_view(["GET"])
@@ -52,6 +53,13 @@ def register_view(request):
     token = get_tokens_for_user(user)
 
     return Response({"token": token, "user": {"username": user.username}})
+
+
+@api_view(["GET"])
+def get_skills(request):
+    skills = Skill.objects.all()
+    serializer = SkillSerializer(skills, many=True)
+    return Response({"skills": serializer.data})
 
 
 # Load NLP model
