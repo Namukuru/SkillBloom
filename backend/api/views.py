@@ -80,30 +80,44 @@ def find_match(request):
     if not skill_matches.exists():
         return Response({"match": None, "message": "No matches found"})
 
-    # Prepare data for similarity matching
+    # Prepare skill dataset for vectorization
     skills = [f"{obj.teach_skill} {obj.learn_skill}" for obj in skill_matches]
     user_input = f"{teach_skill} {learn_skill}"
 
-    # Use TF-IDF for vectorization
+    # Initialize vectorizer & fit only on known skills
     vectorizer = TfidfVectorizer()
-    skill_vectors = vectorizer.fit_transform(skills + [user_input])
-
+    skill_vectors = vectorizer.fit_transform(skills)
+    user_vector = vectorizer.transform([user_input])
     # Compute similarity scores
-    similarity_scores = cosine_similarity(skill_vectors[-1], skill_vectors[:-1])
+    similarity_scores = cosine_similarity(user_vector, skill_vectors)[0]
 
-    # Find best match
-    best_match_index = similarity_scores.argmax()
-    best_match_score = similarity_scores[0][best_match_index]
+    # Debugging output
+    print("User Input:", user_input)
+    print("Skill List:", skills)
+    print("Similarity Scores:", similarity_scores)
 
-    if best_match_score > 0.5:  # Threshold for a valid match
-        matched_user = skill_matches[best_match_index].user
+    if similarity_scores.max() > 0.5:  # Ensure threshold is met
+        best_match_index = similarity_scores.argmax()
+        best_match = skill_matches[best_match_index]
+
+        print(
+            f"Best Match: {best_match.user.username} with score {similarity_scores[best_match_index]}"
+        )
+
         return Response(
             {
                 "match": {
-                    "name": matched_user.username,
-                    "skill": skill_matches[best_match_index].teach_skill,
+                    "name": best_match.user.username,
+                    "skill": best_match.teach_skill,
+                    "score": similarity_scores[best_match_index],
                 }
             }
         )
-    else:
-        return Response({"match": None, "message": "No suitable match found"})
+
+    return Response(
+        {
+            "match": None,
+            "message": "No suitable match found",
+            "scores": list(similarity_scores),
+        }
+    )
