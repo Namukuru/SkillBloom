@@ -1,7 +1,9 @@
-import React from 'react'
+import React from 'react';
 
-export const SkillExchange = () => {
+const SkillExchange = () => {
   return (
-    <div class name="bg-red">SkillExchange</div>
-  )
-}
+    <div className="bg-red-500 text-white p-4">SkillExchange</div>
+  );
+};
+
+export default SkillExchange;
