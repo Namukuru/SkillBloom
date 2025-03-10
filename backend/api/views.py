@@ -9,10 +9,13 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 
+
 from .models import Skill, SkillMatch, CustomUser
 from api.serializers import SkillSerializer
 from django.contrib.auth import get_user_model
-User = get_user_model() 
+
+User = get_user_model()
+
 
 @api_view(["GET"])
 def hello_world(request):
@@ -43,6 +46,30 @@ def login_view(request):
 
 @api_view(["POST"])
 def register_view(request):
+    email = request.data.get("email")
+    password = request.data.get("password")
+    full_name = request.data.get("full_name")
+    skills = request.data.get("skills", [])  # Expecting a list of skill names
+
+    if not email or not password:
+        return Response({"error": "Email and password are required"}, status=400)
+
+    # Create user
+    user = CustomUser.objects.create_user(
+        email=email,
+        password=password,
+        full_name=full_name,
+        username=email,
+    )
+
+    # Assign skills to user
+    for skill_name in skills:
+        skill, created = Skill.objects.get_or_create(name=skill_name)
+        user.skills.add(skill)
+
+    user.save()
+    return Response({"message": "User registered successfully", "user_id": user.id})
+
     full_name = request.data.get("fullName")  # Match frontend field
     email = request.data.get("email")
     password = request.data.get("password")
@@ -68,7 +95,9 @@ def register_view(request):
        
     token = get_tokens_for_user(user)
 
-    return Response({"token": token, "user": {"email": user.email, "full_name": user.full_name}})
+    return Response(
+        {"token": token, "user": {"email": user.email, "full_name": user.full_name}}
+    )
 
 
 @api_view(["GET"])
@@ -78,62 +107,55 @@ def get_skills(request):
     return Response({"skills": serializer.data})
 
 
-# Load NLP model
+# Load NLP model for similarity comparison
 nlp = spacy.load("en_core_web_md")
 
 
 @api_view(["POST"])
 def find_match(request):
-    teach_skill = request.data.get("teach_skill")
-    learn_skill = request.data.get("learn_skill")
+    learn_skill_name = request.data.get("learn")  # User wants to learn this skill
 
-    if not teach_skill or not learn_skill:
-        return Response({"error": "Both skills are required"}, status=400)
+    if not learn_skill_name:
+        return Response({"error": "Skill to learn is required"}, status=400)
 
-    # Retrieve all users and their skills
-    skill_matches = SkillMatch.objects.all()
-
-    if not skill_matches.exists():
-        return Response({"match": None, "message": "No matches found"})
-
-    # Prepare skill dataset for vectorization
-    skills = [f"{obj.teach_skill} {obj.learn_skill}" for obj in skill_matches]
-    user_input = f"{teach_skill} {learn_skill}"
-
-    # Initialize vectorizer & fit only on known skills
-    vectorizer = TfidfVectorizer()
-    skill_vectors = vectorizer.fit_transform(skills)
-    user_vector = vectorizer.transform([user_input])
-    # Compute similarity scores
-    similarity_scores = cosine_similarity(user_vector, skill_vectors)[0]
-
-    # Debugging output
-    print("User Input:", user_input)
-    print("Skill List:", skills)
-    print("Similarity Scores:", similarity_scores)
-
-    if similarity_scores.max() > 0.5:  # Ensure threshold is met
-        best_match_index = similarity_scores.argmax()
-        best_match = skill_matches[best_match_index]
-
-        print(
-            f"Best Match: {best_match.user.username} with score {similarity_scores[best_match_index]}"
+    # 🔹 Check if the requested skill exists in the database
+    learn_skill = Skill.objects.filter(name__iexact=learn_skill_name).first()
+    if not learn_skill:
+        return Response(
+            {"match": None, "message": "No such skill found in the database"}
         )
 
+    # 🔹 Get users who have this skill
+    potential_teachers = CustomUser.objects.filter(skills=learn_skill)
+
+    if not potential_teachers.exists():
+        return Response({"match": None, "message": "No users found with this skill"})
+
+    # 🔹 AI Matching: Compare similarity using NLP
+    best_match = None
+    highest_similarity = 0.0
+
+    user_learn_doc = nlp(learn_skill.name)
+
+    for teacher in potential_teachers:
+        for skill in teacher.skills.all():
+            teach_doc = nlp(skill.name)
+            similarity = user_learn_doc.similarity(teach_doc)  # NLP similarity score
+
+            if similarity > highest_similarity:
+                highest_similarity = similarity
+                best_match = teacher
+
+    if best_match:
         return Response(
             {
                 "match": {
-                    "name": best_match.user.username,
-                    "skill": best_match.teach_skill,
-                    "score": similarity_scores[best_match_index],
+                    "name": best_match.full_name or best_match.email,
+                    "teaches": learn_skill.name,
+                    "proficiency": best_match.proficiency,
+                    "similarity_score": round(highest_similarity, 2),
                 }
             }
         )
 
-    return Response(
-        {
-            "match": None,
-            "message": "No suitable match found",
-            "scores": list(similarity_scores),
-        }
-    )
+    return Response({"match": None, "message": "No suitable match found"})
