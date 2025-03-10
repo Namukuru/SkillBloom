@@ -2,7 +2,6 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 
 # skillmatch imports
@@ -10,9 +9,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 
-from api.models import Skill, SkillMatch
+from .models import Skill, SkillMatch, CustomUser
 from api.serializers import SkillSerializer
-
+from django.contrib.auth import get_user_model
+User = get_user_model() 
 
 @api_view(["GET"])
 def hello_world(request):
@@ -43,16 +43,32 @@ def login_view(request):
 
 @api_view(["POST"])
 def register_view(request):
-    username = request.data.get("username")
+    full_name = request.data.get("fullName")  # Match frontend field
+    email = request.data.get("email")
     password = request.data.get("password")
+    skills = request.data.get("skills", [])  # Expecting a list
+    proficiency = request.data.get("proficiency", "beginner")  # Default value
 
-    if User.objects.filter(username=username).exists():
-        return Response({"error": "Username already exists"}, status=400)
+    if CustomUser.objects.filter(email=email).exists():
+        return Response({"error": "Email already exists"}, status=400)
 
-    user = User.objects.create_user(username=username, password=password)
+    # Create user
+    user = CustomUser.objects.create_user(
+        username=email,  # Set username as email (or generate one)
+        email=email,
+        full_name=full_name,
+        password=password,
+        proficiency=proficiency,
+    )
+
+    # Assign skills using `.set()`
+    if skills:
+        skill_objs = Skill.objects.filter(name__in=skills)  # Match skill names
+        user.skills.set(skill_objs)  # ✅ Correct way to assign ManyToManyField
+
     token = get_tokens_for_user(user)
 
-    return Response({"token": token, "user": {"username": user.username}})
+    return Response({"token": token, "user": {"email": user.email, "full_name": user.full_name}})
 
 
 @api_view(["GET"])
