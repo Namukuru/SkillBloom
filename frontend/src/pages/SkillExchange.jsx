@@ -25,6 +25,7 @@ const SkillExchange = () => {
   
     fetchSkills();
   }, []);
+  
   // Handle match search
   const handleFindMatch = async () => {
     if (!teachingSkill || !learningSkill) {
@@ -67,7 +68,7 @@ const SkillExchange = () => {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a skill" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent style={{ maxHeight: "200px", overflowY: "auto" }}>
                   {skills.map((skill) => (
                     <SelectItem key={skill.id} value={skill.name}>
                       {skill.name}
@@ -83,7 +84,7 @@ const SkillExchange = () => {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a skill" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent style={{ maxHeight: "200px", overflowY: "auto" }}>
                   {skills.map((skill) => (
                     <SelectItem key={skill.id} value={skill.name}>
                       {skill.name}
