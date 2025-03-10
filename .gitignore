@@ -3,3 +3,4 @@ myvirtualenv/
 myvenv/
 .pyc
 
+db.sqlite3

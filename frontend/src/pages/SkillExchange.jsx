@@ -3,8 +3,10 @@ import axios from "axios";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";  // Import useNavigate from react-router-dom
 
 const SkillExchange = () => {
+  const navigate = useNavigate();  // Initialize useNavigate hook
   const [skills, setSkills] = useState([]);
   const [teachingSkill, setTeachingSkill] = useState("");
   const [learningSkill, setLearningSkill] = useState("");
@@ -22,10 +24,10 @@ const SkillExchange = () => {
         setSkills([]); // Fallback to an empty array
       }
     };
-  
+
     fetchSkills();
   }, []);
-  
+
   // Handle match search
   const handleFindMatch = async () => {
     if (!teachingSkill || !learningSkill) {
@@ -33,18 +35,21 @@ const SkillExchange = () => {
       return;
     }
   
+    const requestData = {
+      learn: learningSkill,  // Changed to 'learn' instead of 'learn_skill'
+    };
+    console.log("Request Data:", requestData);
+  
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/find_match/", {
-        teach_skill: teachingSkill, 
-        learn_skill: learningSkill,
-      });
-      console.log("Response Data:", response.data);
+      const response = await axios.post("http://127.0.0.1:8000/api/find_match/", requestData);
+      console.log("Full Response Data:", response.data);  // Log the full response
   
       if (response.data.match) {
-        setMatches(response.data.match); // Store match details
+        console.log("Match found:", response.data.match);  // Log the match object
+        setMatches([response.data.match]); // Store match details
       } else {
         alert(response.data.message || "No match found.");
-        setMatches(null);
+        setMatches([]);
       }
     } catch (error) {
       console.error("Error finding a match:", error);
@@ -52,6 +57,19 @@ const SkillExchange = () => {
     }
   };
   
+  
+
+  // Handle connect button click
+  const handleConnect = (matchId) => {
+    console.log("Connecting to match with ID:", matchId);  // Debugging log
+    if (matchId) {
+      navigate(`/chat/${matchId}`);
+    } else {
+      console.error("Match ID is undefined.");
+      alert("Invalid match ID.");
+    }
+  };
+
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-800 text-white p-5">
       <h1 className="text-3xl font-bold text-purple-400">Skill Exchange Hub</h1>
@@ -109,7 +127,12 @@ const SkillExchange = () => {
             <Card key={index} className="p-3 my-2 bg-gray-700 rounded-lg">
               <CardContent className="flex justify-between items-center">
                 <span>{match.name} - {match.skill}</span>
-                <Button className="bg-purple-500 hover:bg-purple-600">Connect</Button>
+                <Button 
+                  className="bg-purple-500 hover:bg-purple-600"
+                  onClick={() => handleConnect(match.id)}  // Pass the match id to the handleConnect function
+                >
+                  Connect
+                </Button>
               </CardContent>
             </Card>
           ))
