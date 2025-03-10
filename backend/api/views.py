@@ -75,7 +75,7 @@ def register_view(request):
     password = request.data.get("password")
     skills = request.data.get("skills", [])  # Expecting a list
     proficiency = request.data.get("proficiency", "beginner")  # Default value
-    
+
     if CustomUser.objects.filter(email=email).exists():
         return Response({"error": "Email already exists"}, status=400)
 
@@ -92,7 +92,7 @@ def register_view(request):
     if skills:
         skill_objs = Skill.objects.filter(name__in=skills)  # Match skill name
         user.skills.set(skill_objs)  # ✅ Correct way to assign ManyToManyField
-       
+
     token = get_tokens_for_user(user)
 
     return Response(
@@ -150,6 +150,7 @@ def find_match(request):
         return Response(
             {
                 "match": {
+                    "id": best_match.id,
                     "name": best_match.full_name or best_match.email,
                     "teaches": learn_skill.name,
                     "proficiency": best_match.proficiency,
