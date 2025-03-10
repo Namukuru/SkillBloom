@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const navigate = useNavigate(); // Hook for navigation
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -19,6 +21,7 @@ function Login() {
             // Store the token in local storage
             localStorage.setItem("token", response.data.token.access);
             alert("Login successful!");
+            navigate("/dashboard"); // Navigate to the dashboard
         } catch (error) {
             setError("Invalid credentials. Try again.");
         }
