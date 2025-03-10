@@ -17,21 +17,31 @@ class CustomUser(AbstractUser):
         ("expert", "Expert"),
     ]
 
-    skills = models.ManyToManyField(Skill, blank=True)  # Many-to-Many for skills
+    email = models.EmailField(unique=True)  # 🔹 Login with email instead of username
+    full_name = models.CharField(max_length=255, blank=True, null=True)  # 🔹 Added full_name
+    skills = models.ManyToManyField(Skill, blank=True)  # 🔹 Many-to-Many for skills
     proficiency = models.CharField(
         max_length=20,
-        choices=PROFICIENCY_LEVELS,  # Restricts input to valid choices
+        choices=PROFICIENCY_LEVELS,
         default="beginner",
     )
 
     groups = models.ManyToManyField(
-        "auth.Group", related_name="custom_users_groups", blank=True  # Fix conflict
+        "auth.Group",
+        related_name="custom_users_groups",
+        blank=True,
     )
     user_permissions = models.ManyToManyField(
         "auth.Permission",
-        related_name="custom_users_permissions",  # Fix conflict
+        related_name="custom_users_permissions",
         blank=True,
     )
+
+    USERNAME_FIELD = "email"  # 🔹 Email is the unique identifier
+    REQUIRED_FIELDS = ["username"]  # 🔹 Keep username required if needed
+
+    def __str__(self):
+        return self.email  # 🔹 Display email as the default representation
 
 
 class SkillMatch(models.Model):

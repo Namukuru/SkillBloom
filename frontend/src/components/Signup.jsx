@@ -16,21 +16,36 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
       return;
     }
-
-    const response = await fetch("http://127.0.0.1:8000/api/register/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-
-    if (response.ok) {
-      alert("Registration Successful");
-    } else {
-      alert("Error signing up");
+  
+    const requestData = {
+      fullName: formData.fullName,
+      email: formData.email, // Backend uses email as username
+      password: formData.password,
+      skills: formData.skills,
+      proficiency: formData.proficiency,
+    };
+  
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/register/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestData),
+      });
+  
+      const responseData = await response.json();
+      if (response.ok) {
+        alert("Registration Successful");
+      } else {
+        alert(`Error signing up: ${responseData.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Error during signup:", error);
+      alert(`Error signing up: ${error.message}`);
     }
   };
 
