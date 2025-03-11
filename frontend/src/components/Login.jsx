@@ -28,7 +28,7 @@ function Login() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="flex items-center justify-center min-h-screen bg-gray-800">
             <div className="bg-gray-300 p-6 rounded-lg w-96">
                 <h2 className="text-xl font-bold text-center mb-4">Login</h2>
                 {error && <p className="text-red-500 text-center">{error}</p>}
