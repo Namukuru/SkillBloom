@@ -48,33 +48,12 @@ def login_view(request):
 def register_view(request):
     email = request.data.get("email")
     password = request.data.get("password")
-    full_name = request.data.get("full_name")
-    skills = request.data.get("skills", [])  # Expecting a list of skill names
+    full_name = request.data.get("fullName")  # Match frontend field
+    skills = request.data.get("skills", [])  # Expecting a list
+    proficiency = request.data.get("proficiency", "beginner")  # Default value
 
     if not email or not password:
         return Response({"error": "Email and password are required"}, status=400)
-
-    # Create user
-    user = CustomUser.objects.create_user(
-        email=email,
-        password=password,
-        full_name=full_name,
-        username=email,
-    )
-
-    # Assign skills to user
-    for skill_name in skills:
-        skill, created = Skill.objects.get_or_create(name=skill_name)
-        user.skills.add(skill)
-
-    user.save()
-    return Response({"message": "User registered successfully", "user_id": user.id})
-
-    full_name = request.data.get("fullName")  # Match frontend field
-    email = request.data.get("email")
-    password = request.data.get("password")
-    skills = request.data.get("skills", [])  # Expecting a list
-    proficiency = request.data.get("proficiency", "beginner")  # Default value
 
     if CustomUser.objects.filter(email=email).exists():
         return Response({"error": "Email already exists"}, status=400)
@@ -85,7 +64,7 @@ def register_view(request):
         email=email,
         full_name=full_name,
         password=password,
-        proficiency=proficiency,
+        proficiency=proficiency,  # ✅ Ensure proficiency is assigned correctly
     )
 
     # Assign skills using `.set()`
@@ -98,7 +77,6 @@ def register_view(request):
     return Response(
         {"token": token, "user": {"email": user.email, "full_name": user.full_name}}
     )
-
 
 @api_view(["GET"])
 def get_skills(request):
