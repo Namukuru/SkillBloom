@@ -63,3 +63,10 @@
     color: var(--foreground);
   }
 }
+[data-state="open"] {
+  background-color: #1f2937 !important; /* Tailwind gray-800 */
+  color: white !important;
+  border: 1px solid #374151; /* Tailwind gray-700 */
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}

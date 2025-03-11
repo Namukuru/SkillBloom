@@ -86,10 +86,11 @@ const SkillExchange = () => {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a skill" />
                 </SelectTrigger>
-                <SelectContent style={{ maxHeight: "200px", overflowY: "auto" }}>
+                <SelectContent className="bg-gray-900 text-white border border-gray-600 rounded-md shadow-lg">
                   {skills.map((skill) => (
-                    <SelectItem key={skill.id} value={skill.name}>
+                    <SelectItem key={skill.id} value={skill.name} className="hover:bg-gray-700 focus:bg-gray-700 text-white">
                       {skill.name}
+                      
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -102,13 +103,18 @@ const SkillExchange = () => {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a skill" />
                 </SelectTrigger>
-                <SelectContent style={{ maxHeight: "200px", overflowY: "auto" }}>
-                  {skills.map((skill) => (
-                    <SelectItem key={skill.id} value={skill.name}>
-                      {skill.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                <SelectContent className="bg-gray-900 text-white border border-gray-600 rounded-md shadow-lg">
+                {skills.map((skill) => (
+                  <SelectItem
+                    key={skill.id}
+                    value={skill.name}
+                    className="hover:bg-gray-700 focus:bg-gray-700 text-white"
+                  >
+                    {skill.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+
               </Select>
             </div>
           </div>
