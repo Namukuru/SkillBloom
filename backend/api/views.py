@@ -3,6 +3,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 
 # skillmatch imports
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -20,7 +23,6 @@ User = get_user_model()
 @api_view(["GET"])
 def hello_world(request):
     return Response({"message": "Hello, world!"})
-
 
 # Function to generate JWT token
 def get_tokens_for_user(user):
@@ -43,7 +45,6 @@ def login_view(request):
     else:
         return Response({"error": "Invalid credentials"}, status=400)
 
-
 @api_view(["POST"])
 def register_view(request):
     email = request.data.get("email")
@@ -53,32 +54,42 @@ def register_view(request):
     proficiency = request.data.get("proficiency", "beginner")  # Default value
 
     if not email or not password:
-        return Response({"error": "Email and password are required"}, status=400)
+        return Response({"error": "Email and password are required"}, status=HTTP_400_BAD_REQUEST)
 
     if CustomUser.objects.filter(email=email).exists():
-        return Response({"error": "Email already exists"}, status=400)
+        return Response({"error": "Email already exists"}, status=HTTP_400_BAD_REQUEST)
 
-    # Create user
+    # Validate password strength
+    try:
+        validate_password(password)
+    except ValidationError as e:
+        return Response({"error": e.messages}, status=HTTP_400_BAD_REQUEST)
+
+    #  Create user
     user = CustomUser.objects.create_user(
-        username=email,  # Set username as email (or generate one)
+        username=email,  # Set username as email
         email=email,
         fullName=fullName,
         password=password,
-        proficiency=proficiency,  # ✅ Ensure proficiency is assigned correctly
+        proficiency=proficiency,
     )
 
-    # Assign skills using `.set()`
+    #  Assign skills using `.set()`
     if skills:
-        skill_objs = Skill.objects.filter(name__in=skills)  # Match skill name
-        user.skills.set(skill_objs)  # ✅ Correct way to assign ManyToManyField
+        skill_objs = Skill.objects.filter(name__in=skills)  # Ensure skills exist in DB
+        user.skills.set(skill_objs)
 
+    #  Generate authentication token
     token = get_tokens_for_user(user)
 
     return Response(
-        {"token": token, "user": {"email": user.email, "fullName": user.fullName}}
+        {
+            "token": token,
+            "user": {"email": user.email, "fullName": user.fullName},
+        },
+        status=HTTP_201_CREATED,
     )
-
-
+    
 @api_view(["GET"])
 def get_skills(request):
     skills = Skill.objects.all()
@@ -130,10 +141,10 @@ def find_match(request):
             {
                 "match": {
                     "id": best_match.id,
-                    "name": best_match.fullName or best_match.email,
+                    "name": best_match.full_name or best_match.email,
                     "teaches": learn_skill.name,
                     "proficiency": best_match.proficiency,
-                    "similarity_score": round(highest_similarity, 1),
+                    "similarity_score": round(highest_similarity, 2),
                 }
             }
         )
