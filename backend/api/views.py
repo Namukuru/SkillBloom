@@ -21,6 +21,7 @@ User = get_user_model()
 def hello_world(request):
     return Response({"message": "Hello, world!"})
 
+
 # Function to generate JWT token
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -77,6 +78,7 @@ def register_view(request):
         {"token": token, "user": {"email": user.email, "fullName": user.fullName}}
     )
 
+
 @api_view(["GET"])
 def get_skills(request):
     skills = Skill.objects.all()
@@ -128,10 +130,10 @@ def find_match(request):
             {
                 "match": {
                     "id": best_match.id,
-                    "name": best_match.full_name or best_match.email,
+                    "name": best_match.fullName or best_match.email,
                     "teaches": learn_skill.name,
                     "proficiency": best_match.proficiency,
-                    "similarity_score": round(highest_similarity, 2),
+                    "similarity_score": round(highest_similarity, 1),
                 }
             }
         )
