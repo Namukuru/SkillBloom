@@ -1,6 +1,6 @@
 # Ignore virtual environment
 myvirtualenv/
-myvenv/
+venv/
 .pyc
 
 db.sqlite3

@@ -21,7 +21,6 @@ User = get_user_model()
 def hello_world(request):
     return Response({"message": "Hello, world!"})
 
-
 # Function to generate JWT token
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -48,7 +47,7 @@ def login_view(request):
 def register_view(request):
     email = request.data.get("email")
     password = request.data.get("password")
-    full_name = request.data.get("fullName")  # Match frontend field
+    fullName = request.data.get("fullName")  # Match frontend field
     skills = request.data.get("skills", [])  # Expecting a list
     proficiency = request.data.get("proficiency", "beginner")  # Default value
 
@@ -62,7 +61,7 @@ def register_view(request):
     user = CustomUser.objects.create_user(
         username=email,  # Set username as email (or generate one)
         email=email,
-        full_name=full_name,
+        fullName=fullName,
         password=password,
         proficiency=proficiency,  # ✅ Ensure proficiency is assigned correctly
     )
@@ -75,7 +74,7 @@ def register_view(request):
     token = get_tokens_for_user(user)
 
     return Response(
-        {"token": token, "user": {"email": user.email, "full_name": user.full_name}}
+        {"token": token, "user": {"email": user.email, "fullName": user.fullName}}
     )
 
 @api_view(["GET"])
