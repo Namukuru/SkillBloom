@@ -80,7 +80,6 @@ const Signup = () => {
           <input className="w-full p-2 rounded" type="password" name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} required />
 
           <select className="w-full p-2 rounded" name="skills" value={formData.skills[0] || ""} onChange={handleChange} required>
-            <option value="">My Skills</option>
             <option value="Frontend Development">Frontend Development</option>
             <option value="Backend Development">Backend Development</option>
             <option value="UI/UX Design">UI/UX Design</option>
