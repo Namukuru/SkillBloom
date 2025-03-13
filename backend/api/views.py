@@ -46,6 +46,20 @@ def login_view(request):
         return Response({"error": "Invalid credentials"}, status=400)
 
 @api_view(["POST"])
+def logout_view(request):
+    try:
+        refresh_token = request.data.get("refresh_token")
+        if not refresh_token:
+            return Response({"error": "Refresh token required"}, status=400)
+
+        token = RefreshToken(refresh_token)
+        token.blacklist()  # Blacklist the token to invalidate it
+
+        return Response({"message": "Successfully logged out"})
+    except Exception as e:
+        return Response({"error": str(e)}, status=400)
+    
+@api_view(["POST"])
 def register_view(request):
     email = request.data.get("email")
     password = request.data.get("password")
