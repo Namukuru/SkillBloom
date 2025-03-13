@@ -155,7 +155,7 @@ def find_match(request):
             {
                 "match": {
                     "id": best_match.id,
-                    "name": best_match.full_name or best_match.email,
+                    "name": best_match.fullName or best_match.email,
                     "teaches": learn_skill.name,
                     "proficiency": best_match.proficiency,
                     "similarity_score": round(highest_similarity, 2),
