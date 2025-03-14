@@ -11,8 +11,15 @@ const Signup = () => {
   });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+  
+    if (name === "skills") {
+      setFormData({ ...formData, skills: [value] }); // Convert string to array
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,10 +66,12 @@ const Signup = () => {
           <input className="w-full p-2 rounded" type="password" name="password" placeholder="Password" onChange={handleChange} required />
           <input className="w-full p-2 rounded" type="password" name="confirmPassword" placeholder="Confirm Password" onChange={handleChange} required />
 
-          <select className="w-full p-2 rounded" name="skills" onChange={handleChange} required>
+          <select className="w-full p-2 rounded" name="skills" value={formData.skills} onChange={handleChange} required>
             <option value="">My Skills</option>
-            <option value="frontend">Frontend Development</option>
-            <option value="backend">Backend Development</option>
+            <option value="Frontend Development">Frontend Development</option>
+            <option value="Backend Development">Backend Development</option>
+            <option value="UI/UX Design">UI/UX Design</option>
+            <option value="Data Science">Data Science</option>
           </select>
 
           <select className="w-full p-2 rounded" name="proficiency" onChange={handleChange} required>
