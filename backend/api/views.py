@@ -6,6 +6,8 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 
 # skillmatch imports
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -13,8 +15,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 
 
-from .models import Skill, SkillMatch, CustomUser
-from api.serializers import SkillSerializer
+from .models import Skill, SkillMatch, CustomUser 
+from api.serializers import SkillSerializer, UserProfileSerializer
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -164,3 +166,11 @@ def find_match(request):
         )
 
     return Response({"match": None, "message": "No suitable match found"})
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user  # Get the logged-in user
+        serializer = UserProfileSerializer(user)
+        return Response(serializer.data)

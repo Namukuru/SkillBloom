@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
-from .models import CustomUser, Skill
+from .models import CustomUser, Skill, Badge, Review
 import json
 
 
@@ -28,3 +28,21 @@ class SkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Skill
         fields = "__all__"
+class BadgeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Badge
+        fields = ['name', 'image']
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['reviewer', 'comment', 'rating']
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    skills = SkillSerializer(many=True, read_only=True)
+    badges = BadgeSerializer(many=True, read_only=True)
+    reviews = ReviewSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ['fullName', 'proficiency', 'skills', 'xp_points', 'badges', 'reviews']

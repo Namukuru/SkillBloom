@@ -57,3 +57,20 @@ class SkillMatch(models.Model):
 
     def __str__(self):
         return f"{self.user.username} teaches {self.teach_skill} and learns {self.learn_skill}"
+    
+class Badge(models.Model):
+    name = models.CharField(max_length=100)
+    image = models.ImageField(upload_to="badges/")
+    users = models.ManyToManyField(CustomUser, related_name="badges", blank=True)
+
+    def __str__(self):
+        return self.name
+
+class Review(models.Model):
+    reviewer = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="given_reviews")
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="reviews")
+    comment = models.TextField()
+    rating = models.IntegerField()
+
+    def __str__(self):
+        return f"Review by {self.reviewer} for {self.user}"    
