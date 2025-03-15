@@ -5,7 +5,9 @@ import Signup from "./components/Signup"; // Import the Signup component
 import ChatPage from "./pages/Messaging"; // Import the MessagingScheduling component
 import Dashboard from "./components/Dashboard";
 import LogoutButton from "./components/Logout";
+import ProfileButton from "./components/Profile";
 import LandingPage from "./pages/Landing";
+import UserProfile from "./pages/UserProfile";
 
 function App() {
   return (
@@ -19,6 +21,7 @@ function App() {
         <Route path="/skill-exchange" element={<SkillExchange />} />
         <Route path="/message" element={<ChatPage/>} />
         <Route path="/chat/:id" element={<ChatPage />} />
+        <Route path="/profile" element={<UserProfile />} />
       </Routes>
     </Router>
   );
