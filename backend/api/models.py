@@ -18,7 +18,7 @@ class CustomUser(AbstractUser):
     ]
 
     email = models.EmailField(unique=True)  # 🔹 Login with email instead of username
-    full_name = models.CharField(
+    fullName = models.CharField(
         max_length=255, blank=True, null=True
     )  # 🔹 Added full_name
     skills = models.ManyToManyField(Skill, blank=True)  # 🔹 Many-to-Many for skills

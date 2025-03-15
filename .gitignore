@@ -1,6 +1,8 @@
 # Ignore virtual environment
 myvirtualenv/
-myvenv/
+venv/
 .pyc
 
 db.sqlite3
+.qodo
+__pycache__/ 
