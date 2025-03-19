@@ -3,7 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 
 const Navbar = ({ isAuthenticated }) => {
   return (
-    <nav className="bg-gray-800 shadow-md"> {/* Dark gray background */}
+    <nav className="bg-gray-900 shadow-md"> {/* Dark gray background */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Brand/Logo */}
@@ -26,6 +26,18 @@ const Navbar = ({ isAuthenticated }) => {
                   }
                 >
                   Home
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/about"
+                  className={({ isActive }) =>
+                    `px-3 py-2 rounded-md text-sm font-medium ${
+                      isActive ? "bg-purple-500 text-white" : "text-gray-300 hover:bg-purple-600 hover:text-white"
+                    }`
+                  }
+                >
+                  About
                 </NavLink>
               </li>
               <li>
@@ -87,14 +99,6 @@ const Navbar = ({ isAuthenticated }) => {
                       className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-purple-600 hover:text-white"
                     >
                       Login
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to="/signup"
-                      className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-purple-600 hover:text-white"
-                    >
-                      Signup
                     </NavLink>
                   </li>
                 </>

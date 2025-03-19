@@ -8,6 +8,7 @@ import LogoutButton from "./components/Logout";
 import ProfileButton from "./components/Profile";
 import LandingPage from "./pages/Landing";
 import UserProfile from "./pages/UserProfile";
+import AboutPage from "./pages/About";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/message" element={<ChatPage/>} />
         <Route path="/chat/:id" element={<ChatPage />} />
         <Route path="/profile" element={<UserProfile />} />
+        <Route path="/About" element={<AboutPage />} />
       </Routes>
     </Router>
   );

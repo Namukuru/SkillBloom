@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
+import Navbar from "@/components/Navbar";
 
 const SkillExchange = () => {
   const navigate = useNavigate();
@@ -62,82 +63,85 @@ const SkillExchange = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-800 text-white">
-      <div className="flex flex-col items-center flex-grow p-5">
-        <h1 className="text-3xl font-bold text-purple-400">Skill Exchange Hub</h1>
-        <p className="text-sm text-gray-300 mb-5">Get matched with relevant skills using our AI model</p><br></br>
+    <div>
+      <Navbar />
+      <div className="flex flex-col min-h-screen bg-gray-800 text-white">
+        <div className="flex flex-col items-center flex-grow p-5">
+          <h1 className="text-3xl font-bold text-purple-400">Skill Exchange Hub</h1>
+          <p className="text-sm text-gray-300 mb-5">Get matched with relevant skills using our AI model</p><br></br>
 
-        <Card className="w-full max-w-lg bg-gray-700 p-6 rounded-2xl">
-          <CardContent className="flex flex-col gap-4">
-            <h2 className="text-xl font-semibold text-center">Find a Skill Exchange</h2>
+          <Card className="w-full max-w-lg bg-gray-700 p-6 rounded-2xl">
+            <CardContent className="flex flex-col gap-4">
+              <h2 className="text-xl font-semibold text-center">Find a Skill Exchange</h2>
 
-            <div className="flex justify-between">
-              <div className="flex flex-col w-1/2 px-2">
-                <label className="text-sm mb-1">I can teach ...</label>
-                <Select onValueChange={setTeachingSkill}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a skill" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-900 text-white border border-gray-600 rounded-md shadow-lg">
-                    {skills.map((skill) => (
-                      <SelectItem key={skill.id} value={skill.name} className="hover:bg-gray-700">
-                        {skill.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex justify-between">
+                <div className="flex flex-col w-1/2 px-2">
+                  <label className="text-sm mb-1">I can teach ...</label>
+                  <Select onValueChange={setTeachingSkill}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a skill" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 text-white border border-gray-600 rounded-md shadow-lg">
+                      {skills.map((skill) => (
+                        <SelectItem key={skill.id} value={skill.name} className="hover:bg-gray-700">
+                          {skill.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col w-1/2 px-2">
+                  <label className="text-sm mb-1">I want to learn ...</label>
+                  <Select onValueChange={setLearningSkill}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a skill" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 text-white border border-gray-600 rounded-md shadow-lg">
+                      {skills.map((skill) => (
+                        <SelectItem key={skill.id} value={skill.name} className="hover:bg-gray-700">
+                          {skill.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div className="flex flex-col w-1/2 px-2">
-                <label className="text-sm mb-1">I want to learn ...</label>
-                <Select onValueChange={setLearningSkill}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a skill" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-900 text-white border border-gray-600 rounded-md shadow-lg">
-                    {skills.map((skill) => (
-                      <SelectItem key={skill.id} value={skill.name} className="hover:bg-gray-700">
-                        {skill.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Button onClick={handleFindMatch} className="w-full bg-purple-500 hover:bg-purple-600 flex items-center justify-center gap-2">
+    <img src="reload.png" alt="Reload Icon" className="w-5 h-5" />
+    <span>Find a match</span>
+  </Button>
+            </CardContent>
+          </Card>
+
+          {/* Available Matches - Only show after clicking Find a Match */}
+          {showMatches && (
+            <div className="mt-6 w-full max-w-lg">
+              <h3 className="text-lg font-semibold">Available Matches</h3>
+              {matches.length > 0 ? (
+                matches.map((match, index) => (
+                  <Card key={index} className="p-3 my-2 bg-gray-700 rounded-lg">
+                    <CardContent className="flex justify-between items-center">
+                      <span>{match.name} - {match.skill}</span>
+                      <Button className="bg-purple-500 hover:bg-purple-600" onClick={() => handleConnect(match.id)}>
+                        Connect
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <p className="text-gray-400 text-center mt-2">No matches found</p>
+              )}
             </div>
+          )}
+        </div>
 
-            <Button onClick={handleFindMatch} className="w-full bg-purple-500 hover:bg-purple-600 flex items-center justify-center gap-2">
-  <img src="reload.png" alt="Reload Icon" className="w-5 h-5" />
-  <span>Find a match</span>
-</Button>
-          </CardContent>
-        </Card>
-
-        {/* Available Matches - Only show after clicking Find a Match */}
-        {showMatches && (
-          <div className="mt-6 w-full max-w-lg">
-            <h3 className="text-lg font-semibold">Available Matches</h3>
-            {matches.length > 0 ? (
-              matches.map((match, index) => (
-                <Card key={index} className="p-3 my-2 bg-gray-700 rounded-lg">
-                  <CardContent className="flex justify-between items-center">
-                    <span>{match.name} - {match.skill}</span>
-                    <Button className="bg-purple-500 hover:bg-purple-600" onClick={() => handleConnect(match.id)}>
-                      Connect
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <p className="text-gray-400 text-center mt-2">No matches found</p>
-            )}
-          </div>
-        )}
+        {/* Sticky Footer */}
+        <footer className="w-full text-xs text-gray-400 text-center py-3 bg-gray-900 mt-auto">
+          © 2025 Copyright: SkillBloom
+        </footer>
       </div>
-
-      {/* Sticky Footer */}
-      <footer className="w-full text-xs text-gray-400 text-center py-3 bg-gray-900 mt-auto">
-        © 2025 Copyright: SkillBloom
-      </footer>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import Navbar from '../components/Navbar'; // Adjust the path based on your file structure
+import Navbar from '../components/Navbar';
 
 const UserProfile = () => {
     const [profile, setProfile] = useState({
@@ -50,7 +50,7 @@ const UserProfile = () => {
     return (
         <div>
             {/* Include the Navbar */}
-            <Navbar isAuthenticated={true} /> {/* Replace `true` with your authentication logic */}
+            <Navbar isAuthenticated={true} />
             <div className="mt-6">
                 {/* Profile Content */}
                 <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">

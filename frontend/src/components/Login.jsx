@@ -30,7 +30,7 @@ function Login() {
 
             // ✅ Navigate smoothly after 100ms to prevent lag
             setTimeout(() => {
-                navigate("/dashboard", { replace: true });
+                navigate("/profile", { replace: true });
             }, 100);
         } catch (error) {
             setError("❌ Invalid credentials. Try again.");

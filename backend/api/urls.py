@@ -8,6 +8,7 @@ from .views import (
     logout_view,
     UserProfileView,
     send_sms,
+    about_view,
 )
 
 urlpatterns = [
@@ -18,5 +19,6 @@ urlpatterns = [
     path("skills/", get_skills, name="get_skills"),
     path("logout/", logout_view, name="logout"),
     path("send_sms/", send_sms, name="send_sms"),
+    path('about/', about_view, name='about'),
     path("api/profile/", UserProfileView.as_view(), name="user_profile_api"),
 ]

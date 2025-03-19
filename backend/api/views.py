@@ -33,6 +33,13 @@ User = get_user_model()
 def hello_world(request):
     return Response({"message": "Hello, world!"})
 
+def about_view(request):
+    data = {
+        "title": "Skill Swap",
+        "description": "A platform for exchanging skills with others.",
+        "version": "1.0.0",
+    }
+    return JsonResponse(data)
 
 # Function to generate JWT token
 def get_tokens_for_user(user):
