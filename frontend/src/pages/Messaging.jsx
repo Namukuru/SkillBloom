@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { MessageCircle, Calendar, User, Send } from "lucide-react"; // Added Send icon for messages
+import { MessageCircle, Calendar, User, Send } from "lucide-react";
+import { sendSMS } from "@/lib/sms";
+
 
 export default function ChatPage() {
   // State for managing chat messages and user input
@@ -23,11 +25,17 @@ export default function ChatPage() {
   };
 
   // Handle scheduling the session
-  const handleConfirmSchedule = () => {
+  const handleConfirmSchedule = async () => {
     if (scheduledDate) {
-      alert(`Session scheduled for ${scheduledDate}`);
+        alert(`Session scheduled for ${scheduledDate}`);
+
+        // Replace with user's phone number (could be from user state or auth)
+        const userPhoneNumber = "+254736131740";  
+        const message = `Your Skillbloom session has been scheduled for ${scheduledDate}. Thank you!`;
+
+        await sendSMS(userPhoneNumber, message);
     }
-  };
+};
 
   // Handle feedback submission
   const handleFeedbackChange = (e) => {

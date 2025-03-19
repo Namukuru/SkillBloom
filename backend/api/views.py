@@ -8,14 +8,21 @@ from django.core.exceptions import ValidationError
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import requests
+import json
+
 
 # skillmatch imports
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 
+from backend.backend.settings import AFRICASTALKING_API_KEY, AFRICASTALKING_USERNAME
 
-from .models import Skill, SkillMatch, CustomUser 
+
+from .models import Skill, SkillMatch, CustomUser
 from api.serializers import SkillSerializer, UserProfileSerializer
 from django.contrib.auth import get_user_model
 
@@ -25,6 +32,7 @@ User = get_user_model()
 @api_view(["GET"])
 def hello_world(request):
     return Response({"message": "Hello, world!"})
+
 
 # Function to generate JWT token
 def get_tokens_for_user(user):
@@ -47,6 +55,7 @@ def login_view(request):
     else:
         return Response({"error": "Invalid credentials"}, status=400)
 
+
 @api_view(["POST"])
 def logout_view(request):
     try:
@@ -60,7 +69,8 @@ def logout_view(request):
         return Response({"message": "Successfully logged out"})
     except Exception as e:
         return Response({"error": str(e)}, status=400)
-    
+
+
 @api_view(["POST"])
 def register_view(request):
     email = request.data.get("email")
@@ -70,7 +80,9 @@ def register_view(request):
     proficiency = request.data.get("proficiency", "beginner")  # Default value
 
     if not email or not password:
-        return Response({"error": "Email and password are required"}, status=HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Email and password are required"}, status=HTTP_400_BAD_REQUEST
+        )
 
     if CustomUser.objects.filter(email=email).exists():
         return Response({"error": "Email already exists"}, status=HTTP_400_BAD_REQUEST)
@@ -105,7 +117,8 @@ def register_view(request):
         },
         status=HTTP_201_CREATED,
     )
-    
+
+
 @api_view(["GET"])
 def get_skills(request):
     skills = Skill.objects.all()
@@ -167,6 +180,7 @@ def find_match(request):
 
     return Response({"match": None, "message": "No suitable match found"})
 
+
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -174,3 +188,60 @@ class UserProfileView(APIView):
         user = request.user  # Get the logged-in user
         serializer = UserProfileSerializer(user)
         return Response(serializer.data)
+
+
+API_KEY = AFRICASTALKING_API_KEY
+USERNAME = AFRICASTALKING_USERNAME
+SMS_URL = "https://api.africastalking.com/version1/messaging"
+
+
+@csrf_exempt
+def send_sms(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            phone_number = data.get("phone_number")
+            message = data.get("message")
+
+            if not phone_number or not message:
+                return JsonResponse(
+                    {"error": "Missing phone_number or message"}, status=400
+                )
+
+            response = requests.post(
+                SMS_URL,
+                data={
+                    "username": USERNAME,
+                    "to": phone_number,
+                    "message": message,
+                },
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json",
+                    "apiKey": API_KEY,  # ✅ Corrected API Key placement
+                },
+            )
+
+            # ✅ Check if response is JSON before calling `.json()`
+            try:
+                response_data = response.json()
+            except ValueError:
+                response_data = {
+                    "error": "Invalid response from SMS API",
+                    "details": response.text,
+                }
+
+            # 🔹 Log API response
+            print("AfricasTalking API Response:", response_data)
+
+            return JsonResponse(response_data, status=response.status_code)
+
+        except Exception as e:
+            import traceback
+
+            print(
+                "SMS Sending Error:", traceback.format_exc()
+            )  # Logs full error details
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
