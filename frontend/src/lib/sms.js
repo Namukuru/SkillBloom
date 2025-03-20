@@ -1,16 +1,33 @@
 import axios from "axios";
-const API_URL = "http://localhost:8000/api/send_sms/"; // Include "/api/"
+const API_URL = "http://localhost:8000/api/send_sms/"; 
 
-export const sendSMS = async (phoneNumber, message) => {
+export const sendSMS = async (phoneNumber, skillName, student, scheduledDate) => {
     try {
-        const response = await axios.post(API_URL, {
+        console.log("📡 Sending request to API:", API_URL, {
             phone_number: phoneNumber,
-            message: message,
+            skill_name: skillName,
+            scheduled_date: scheduledDate,
+            student: student, // Ensure this is sent
         });
 
-        console.log("SMS sent:", response.data);
-        return response.data;
+        const response = await axios.post(API_URL, {
+            phone_number: phoneNumber,
+            skill_name: skillName,
+            scheduled_date: scheduledDate,
+            student: student,
+        });
+
+        console.log("✅ SMS sent successfully:", response);
+        return response; // Return full response
+
     } catch (error) {
-        console.error("SMS sending error:", error);
+        if (error.response) {
+            console.error("❌ SMS API Error:", error.response.status, error.response.data);
+            alert("SMS Error: " + (error.response.data.error || "Unknown error"));
+        } else {
+            console.error("❌ Network/Server Error:", error.message);
+            alert("Network error: Unable to reach the server");
+        }
+        return null; // Return null on failure
     }
 };

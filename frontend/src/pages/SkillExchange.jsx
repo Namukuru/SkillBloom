@@ -55,12 +55,14 @@ const SkillExchange = () => {
   };
 
   const handleConnect = (matchId) => {
-    if (matchId) {
-      navigate(`/chat/${matchId}`);
-    } else {
-      alert("Invalid match ID.");
+    if (!learningSkill) {
+      alert("Please select a skill before connecting.");
+      return;
     }
+    localStorage.setItem("selectedSkill", learningSkill); // Store skill before navigating
+    navigate(`/chat/${matchId}`);
   };
+  
 
   return (
     <div>

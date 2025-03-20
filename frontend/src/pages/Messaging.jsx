@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { MessageCircle, Calendar, User, Send } from "lucide-react";
+import axios from "axios";
 import { sendSMS } from "@/lib/sms";
 import Navbar from "@/components/Navbar";
 
 
 export default function ChatPage() {
-  // State for managing chat messages and user input
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([
     { sender: "user", text: "Hello, I have a question about the session!" },
@@ -16,29 +16,96 @@ export default function ChatPage() {
   ]);
   const [feedback, setFeedback] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
+  const [selectedSkill, setSelectedSkill] = useState(localStorage.getItem("selectedSkill") || "");
 
-  // Handle sending a message
+
   const handleSendMessage = () => {
     if (message.trim()) {
       setMessages([...messages, { sender: "user", text: message }]);
-      setMessage(""); // Clear the input field after sending
+      setMessage("");
     }
   };
 
-  // Handle scheduling the session
   const handleConfirmSchedule = async () => {
-    if (scheduledDate) {
-        alert(`Session scheduled for ${scheduledDate}`);
+    if (!scheduledDate) {
+        alert("Please select a date before confirming.");
+        return;
+    }
 
-        // Replace with user's phone number (could be from user state or auth)
-        const userPhoneNumber = "+254736131740";  
-        const message = `Your Skillbloom session has been scheduled for ${scheduledDate}. Thank you!`;
+    try {
+        const token = sessionStorage.getItem("token");
+        if (!token) {
+            console.error("❌ No token found. User might not be logged in.");
+            alert("You need to log in first!");
+            return;
+        }
 
-        await sendSMS(userPhoneNumber, message);
+        const decodedToken = JSON.parse(atob(token.split('.')[1]));
+        console.log("🔑 Decoded Token:", decodedToken); // Debugging
+
+        const userName = decodedToken.fullName || decodedToken.email || "Unknown User"; // Ensure student name is assigned
+
+        if (!userName) {
+            console.error("❌ Error: User name is missing!");
+            alert("User name could not be retrieved. Please log in again.");
+            return;
+        }
+
+        let userPhoneNumber = prompt("Enter your phone number (e.g., +2547XXXXXXXX):");
+        if (!userPhoneNumber || !userPhoneNumber.match(/^\+2547\d{8}$/)) {
+            alert("Invalid phone number format. Please use +2547XXXXXXXX.");
+            return;
+        }
+
+        if (!selectedSkill) {
+            console.error("⚠️ Error: selectedSkill is undefined or empty.");
+            alert("Please select a skill before scheduling.");
+            return;
+        }
+
+        console.log("🔍 Finding match for skill:", selectedSkill);
+
+        const matchResponse = await axios.post("http://localhost:8000/api/find_match/", {
+            learn: selectedSkill.trim(),
+        });
+
+        const matchData = matchResponse.data;
+        if (!matchData.match) {
+            alert("No matching teacher found.");
+            return;
+        }
+
+        const teacher = matchData.match.name;
+        console.log("🎯 Matched with teacher:", teacher);
+
+        // Prepare data to be sent to backend
+        const smsData = {
+            phone_number: userPhoneNumber,
+            skill_name: selectedSkill,
+            scheduled_date: scheduledDate,
+            student: userName,  // Use user name from the decoded token
+        };
+
+        console.log("📡 Sending SMS:", smsData);
+
+        // Send request to backend to send SMS
+        const smsResponse = await sendSMS(userPhoneNumber, selectedSkill, userName, scheduledDate);
+
+        if (smsResponse && (smsResponse.status === 200 || smsResponse.status === 201)) {
+            alert("✅ Session confirmed and SMS sent!");
+        } else {
+            console.error("❌ Failed to send SMS:", smsResponse);
+            alert("❌ Failed to send SMS. Please try again.");
+        }
+
+    } catch (error) {
+        console.error("❌ Error scheduling session:", error);
+        alert("Something went wrong. Please try again.");
     }
 };
 
-  // Handle feedback submission
+
+
   const handleFeedbackChange = (e) => {
     setFeedback(e.target.value);
   };

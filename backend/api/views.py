@@ -13,16 +13,13 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 import json
 
-
 # skillmatch imports
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 
-from backend.backend.settings import AFRICASTALKING_API_KEY, AFRICASTALKING_USERNAME
-
-
-from .models import Skill, SkillMatch, CustomUser
+from backend.settings import AFRICASTALKING_API_KEY, AFRICASTALKING_USERNAME
+from .models import Skill, CustomUser
 from api.serializers import SkillSerializer, UserProfileSerializer
 from django.contrib.auth import get_user_model
 
@@ -33,6 +30,7 @@ User = get_user_model()
 def hello_world(request):
     return Response({"message": "Hello, world!"})
 
+
 def about_view(request):
     data = {
         "title": "Skill Swap",
@@ -41,13 +39,26 @@ def about_view(request):
     }
     return JsonResponse(data)
 
+
 # Function to generate JWT token
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
+    refresh["fullName"] = user.fullName
+    refresh["email"] = user.email
+
     return {
         "refresh": str(refresh),
         "access": str(refresh.access_token),
+        "user": {
+            "email": user.email,
+            "fullName": user.fullName,
+        },
     }
+
+
+@api_view(["GET"])
+def hello_world(request):
+    return Response({"message": "Hello, world!"})
 
 
 @api_view(["POST"])
@@ -94,33 +105,36 @@ def register_view(request):
     if CustomUser.objects.filter(email=email).exists():
         return Response({"error": "Email already exists"}, status=HTTP_400_BAD_REQUEST)
 
-    # Validate password strength
     try:
         validate_password(password)
     except ValidationError as e:
         return Response({"error": e.messages}, status=HTTP_400_BAD_REQUEST)
 
-    #  Create user
+    # ✅ Create user
     user = CustomUser.objects.create_user(
-        username=email,  # Set username as email
+        username=email,
         email=email,
         fullName=fullName,
         password=password,
         proficiency=proficiency,
     )
 
-    #  Assign skills using `.set()`
+    # ✅ Assign skills
     if skills:
-        skill_objs = Skill.objects.filter(name__in=skills)  # Ensure skills exist in DB
+        skill_objs = Skill.objects.filter(name__in=skills)
         user.skills.set(skill_objs)
 
-    #  Generate authentication token
+    # ✅ Generate token
     token = get_tokens_for_user(user)
 
     return Response(
         {
             "token": token,
-            "user": {"email": user.email, "fullName": user.fullName},
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "fullName": user.fullName,
+            },
         },
         status=HTTP_201_CREATED,
     )
@@ -192,7 +206,7 @@ class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user  # Get the logged-in user
+        user = request.user
         serializer = UserProfileSerializer(user)
         return Response(serializer.data)
 
@@ -208,47 +222,48 @@ def send_sms(request):
         try:
             data = json.loads(request.body)
             phone_number = data.get("phone_number")
-            message = data.get("message")
+            skill_name = data.get("skill_name")
+            scheduled_date = data.get("scheduled_date")
+            student = data.get("student")
 
-            if not phone_number or not message:
+            if not phone_number or not skill_name or not scheduled_date or not student:
+                return JsonResponse({"error": "Missing required fields"}, status=400)
+
+            # 🔍 Call `find_match` API to get the teacher
+            match_response = requests.post(
+                "http://127.0.0.1:8000/api/find_match/",
+                json={"learn": skill_name},
+                headers={"Content-Type": "application/json"},
+            )
+
+            if match_response.status_code != 200:
                 return JsonResponse(
-                    {"error": "Missing phone_number or message"}, status=400
+                    {"error": f"find_match API failed: {match_response.text}"},
+                    status=500,
                 )
 
-            response = requests.post(
+            match_data = match_response.json().get("match")
+            if not match_data:
+                return JsonResponse({"error": "No match found"}, status=404)
+
+            teacher_name = match_data.get("name", "Unknown Teacher")
+
+            message = f"Hello {student}, your Skillbloom session for {skill_name} with {teacher_name} has been scheduled for {scheduled_date}. Thank you!"
+
+            # 📡 Send SMS
+            sms_response = requests.post(
                 SMS_URL,
-                data={
-                    "username": USERNAME,
-                    "to": phone_number,
-                    "message": message,
-                },
+                data={"username": USERNAME, "to": phone_number, "message": message},
                 headers={
                     "Content-Type": "application/x-www-form-urlencoded",
                     "Accept": "application/json",
-                    "apiKey": API_KEY,  # ✅ Corrected API Key placement
+                    "apiKey": API_KEY,
                 },
             )
 
-            # ✅ Check if response is JSON before calling `.json()`
-            try:
-                response_data = response.json()
-            except ValueError:
-                response_data = {
-                    "error": "Invalid response from SMS API",
-                    "details": response.text,
-                }
-
-            # 🔹 Log API response
-            print("AfricasTalking API Response:", response_data)
-
-            return JsonResponse(response_data, status=response.status_code)
+            return JsonResponse(sms_response.json(), status=sms_response.status_code)
 
         except Exception as e:
-            import traceback
-
-            print(
-                "SMS Sending Error:", traceback.format_exc()
-            )  # Logs full error details
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)

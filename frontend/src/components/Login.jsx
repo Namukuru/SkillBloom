@@ -22,6 +22,8 @@ function Login() {
 
             // Store the token
             sessionStorage.setItem("token", response.data.token.access);
+            console.log("✅ Logged in successfully:", response.data);
+
 
             // ✅ Show success alert instantly
             Promise.resolve().then(() => {
