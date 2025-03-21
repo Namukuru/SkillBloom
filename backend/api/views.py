@@ -12,6 +12,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import requests
 import json
+from django.db import models
 
 # skillmatch imports
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -19,8 +20,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 
 from backend.settings import AFRICASTALKING_API_KEY, AFRICASTALKING_USERNAME
-from .models import Skill, CustomUser
-from api.serializers import SkillSerializer, UserProfileSerializer
+from .models import Skill, CustomUser, SkillMatch, Rating
+from api.serializers import SkillSerializer, UserProfileSerializer, SkillMatchSerializer
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -267,3 +268,57 @@ def send_sms(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+@api_view(['POST'])
+def complete_session(request, skill_match_id):
+    skill_match = SkillMatch.objects.get(id=skill_match_id)
+    if not skill_match.is_completed:
+        skill_match.is_completed = True
+        skill_match.save()
+        return Response({"message": "Session marked as completed."})
+    return Response({"message": "Session already completed."})
+
+@api_view(['POST'])
+def rate_teacher(request, skill_match_id):
+    skill_match = SkillMatch.objects.get(id=skill_match_id)
+    if skill_match.is_completed and not skill_match.is_rated:
+        rating = request.data.get('rating')
+        feedback = request.data.get('feedback', '')
+
+        # Create the rating
+        Rating.objects.create(
+            skill_match=skill_match,
+            learner=skill_match.user,  # Learner is the user who requested the session
+            teacher=skill_match.teach_skill.user,  # Teacher is the user offering the skill
+            rating=rating,
+            feedback=feedback
+        )
+
+        # Allocate credits to the teacher based on the rating
+        teacher = skill_match.teach_skill.user
+        teacher.credits += rating  # Give credits equal to the rating (e.g., 5 credits for a 5-star rating)
+        teacher.save()
+
+        skill_match.is_rated = True
+        skill_match.save()
+
+        return Response({"message": "Teacher rated successfully!"})
+    return Response({"message": "Session not completed or already rated."})
+
+@api_view(['GET'])
+def scheduled_sessions(request, user_id):
+    # Fetch all scheduled sessions for the user (both as a teacher and learner)
+    sessions = SkillMatch.objects.filter(
+        models.Q(user_id=user_id) | models.Q(teach_skill__user_id=user_id),
+        is_completed=False
+    )
+    serializer = SkillMatchSerializer(sessions, many=True)
+    return Response(serializer.data)@api_view(['GET'])
+
+@api_view(['GET'])
+def user_sessions(request):
+    user_id = request.user.id  # Get the current user's ID
+    sessions = SkillMatch.objects.filter(
+        models.Q(user_id=user_id) | models.Q(teach_skill__user_id=user_id))
+    serializer = SkillMatchSerializer(sessions, many=True)
+    return Response(serializer.data)

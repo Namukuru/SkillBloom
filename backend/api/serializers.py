@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
-from .models import CustomUser, Skill, Badge, Review
+from .models import CustomUser, Skill, Badge, Review, SkillMatch
 import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -70,3 +70,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["email"] = user.email
 
         return token
+
+class SkillMatchSerializer(serializers.ModelSerializer):
+    teach_skill = SkillSerializer()
+    learn_skill = SkillSerializer()
+    user = CustomUserSerializer()
+
+    class Meta:
+        model = SkillMatch
+        fields = ['id', 'user', 'teach_skill', 'learn_skill', 'is_completed', 'is_rated']

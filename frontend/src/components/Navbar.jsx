@@ -94,6 +94,18 @@ const Navbar = () => {
                       Profile
                     </NavLink>
                   </li>
+                  <li>
+                    <NavLink
+                      to="/sessions"
+                      className={({ isActive }) =>
+                        `px-3 py-2 rounded-md text-sm font-medium ${
+                          isActive ? "bg-purple-500 text-white" : "text-gray-300 hover:bg-purple-600 hover:text-white"
+                        }`
+                      }
+                    >
+                      Sessions
+                    </NavLink>
+                  </li>
                 </>
               )}
             </ul>

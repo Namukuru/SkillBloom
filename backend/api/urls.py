@@ -9,6 +9,10 @@ from .views import (
     UserProfileView,
     send_sms,
     about_view,
+    complete_session,
+    rate_teacher,
+    scheduled_sessions,
+    user_sessions,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -24,4 +28,8 @@ urlpatterns = [
     path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("profile/", UserProfileView.as_view(), name="user_profile_api"),
+    path('complete-session/<int:skill_match_id>/', complete_session, name='complete_session'),
+    path('rate-teacher/<int:skill_match_id>/', rate_teacher, name='rate_teacher'),
+    path('scheduled-sessions/<int:user_id>/', scheduled_sessions, name='scheduled_sessions'),
+    path('sessions/', user_sessions, name='user_sessions'),
 ]

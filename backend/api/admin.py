@@ -9,7 +9,7 @@ class SkillAdmin(admin.ModelAdmin):
     ordering = ('name',)
 
 class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ("email", "fullName", "proficiency","get_skills")  # Show basic user details
+    list_display = ("email", "fullName", "proficiency","get_skills","credits")  # Show basic user details
     search_fields = ("email", "fullName")  # Enable searching by email & name
     ordering = ("email",)  # Order by email
     

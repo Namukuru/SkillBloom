@@ -10,6 +10,7 @@ import ProfileButton from "./components/Profile";
 import LandingPage from "./pages/Landing";
 import UserProfile from "./pages/UserProfile";
 import AboutPage from "./pages/About";
+import SessionsPage from "./pages/Sessions";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="/chat/:id" element={<ChatPage />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/About" element={<AboutPage />} />
+          <Route path="/sessions" element={<SessionsPage />} /> 
         </Routes>
       </AuthProvider>
     </Router>
