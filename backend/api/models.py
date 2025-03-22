@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 
 class Skill(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
@@ -51,8 +53,9 @@ class SkillMatch(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     teach_skill = models.ForeignKey(Skill, related_name="teachers", on_delete=models.CASCADE)
     learn_skill = models.ForeignKey(Skill, related_name="learners", on_delete=models.CASCADE)
-    is_completed = models.BooleanField(default=False)  # 🔹 Track session completion
-    is_rated = models.BooleanField(default=False)  # 🔹 Track if the session is rated
+    scheduled_date = models.DateTimeField()  # Add this field to store the scheduled date
+    is_completed = models.BooleanField(default=False)  # Track session completion
+    is_rated = models.BooleanField(default=False)  # Track if the session is rated
 
     def __str__(self):
         return f"{self.user.username} teaches {self.teach_skill} and learns {self.learn_skill}"
