@@ -11,6 +11,7 @@ import LandingPage from "./pages/Landing";
 import UserProfile from "./pages/UserProfile";
 import AboutPage from "./pages/About";
 import SessionsPage from "./pages/Sessions";
+import HomePage from "./pages/Home";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/home" element={<HomePage />} />
           <Route path="/Signup" element={<Signup />} />
           <Route path="/Login" element={<Login />} />
           <Route path="/Logout" element={<LogoutButton />} />

@@ -33,7 +33,7 @@ const Navbar = () => {
             <ul className="flex space-x-4">
               <li>
                 <NavLink
-                  to="/"
+                  to="/home"
                   className={({ isActive }) =>
                     `px-3 py-2 rounded-md text-sm font-medium ${
                       isActive ? "bg-purple-500 text-white" : "text-gray-300 hover:bg-purple-600 hover:text-white"
