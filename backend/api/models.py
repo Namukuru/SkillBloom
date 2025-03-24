@@ -27,6 +27,7 @@ class CustomUser(AbstractUser):
         choices=PROFICIENCY_LEVELS,
         default="beginner",
     )
+    xp_points = models.IntegerField(default=100)
 
     groups = models.ManyToManyField(
         "auth.Group",

@@ -1,43 +1,40 @@
 import { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import { AuthContext } from "../context/AuthContext"; // Import the AuthContext
+import api from "../utils/AxiosConfig"; // Import configured Axios instance
+import { AuthContext } from "../context/AuthContext";
 
 function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext); // Get the login function from AuthContext
+  const { login } = useContext(AuthContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true); // Show loading state
+    setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:8000/api/login/", {
-        username,
-        password,
-      });
+      const response = await api.post("/login/", { username: email, password });
 
-      // Store the token
-      sessionStorage.setItem("token", response.data.token.access);
-      console.log("✅ Logged in successfully:", response.data);
+      // Store tokens in session storage
+      sessionStorage.setItem("access_token", response.data.token.access);
+      sessionStorage.setItem("refresh_token", response.data.token.refresh);
 
-      // Update the isAuthenticated state
-      login(); // Call the login function from AuthContext
+      // Set Authorization header globally
+      api.defaults.headers.common["Authorization"] = `Bearer ${response.data.token.access}`;
 
-      // Show success alert
+      // Update authentication state
+      login();
       alert("✅ Login successful!");
-
-      // Navigate to the profile page
       navigate("/profile", { replace: true });
+
     } catch (error) {
-      setError("❌ Invalid credentials. Try again.");
+      setError(error.response?.data?.detail || "❌ Invalid credentials. Try again.");
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false);
     }
   };
 
@@ -51,9 +48,9 @@ function Login() {
           <input
             className="w-full p-2 rounded border border-gray-400"
             type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
           <input
@@ -75,13 +72,9 @@ function Login() {
           </button>
         </form>
 
-        {/* Signup Section */}
         <div className="mt-4 text-center">
           <p className="text-gray-600">Don't have an account?</p>
-          <Link
-            to="/signup"
-            className="text-purple-500 hover:underline font-medium"
-          >
+          <Link to="/signup" className="text-purple-500 hover:underline font-medium">
             Create an account
           </Link>
         </div>

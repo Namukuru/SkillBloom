@@ -48,6 +48,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
     skills = SkillSerializer(many=True, read_only=True)
     badges = BadgeSerializer(many=True, read_only=True)
     reviews = ReviewSerializer(many=True, read_only=True)  # Include the reviews field
+    xp_points = serializers.SerializerMethodField()
+
+    def get_xp_points(self, obj):
+        return obj.xp_points
 
     class Meta:
         model = CustomUser
@@ -57,6 +61,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "skills",
             "badges",
             "reviews",
+            "xp_points",
         ]
 
 

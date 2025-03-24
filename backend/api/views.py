@@ -1,17 +1,19 @@
 from django.shortcuts import render
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated , AllowAny
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import requests
 import json
+from django.contrib.auth import get_user_model
+from rest_framework import status, viewsets
 
 # skillmatch imports
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -203,12 +205,24 @@ def find_match(request):
 
 
 class UserProfileView(APIView):
+    #authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-        serializer = UserProfileSerializer(user)
+        user = request.user  # Ensure this is the logged-in user
+        print("User:", user.email)  # Debugging output
+        print("Authenticated:", user.is_authenticated)
+
+        if not user.is_authenticated:
+            return Response({"error": "User is not authenticated"}, status=401)
+
+        serializer = UserProfileSerializer(user, many=False)  # Serialize single user
         return Response(serializer.data)
+    
+
+    
+    
+
 
 
 API_KEY = AFRICASTALKING_API_KEY
@@ -267,3 +281,29 @@ def send_sms(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+User = get_user_model()
+
+class XPTransactionViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=["POST"])
+    def transfer_xp(self, request):
+        sender = request.user
+        recipient_username = request.data.get("recipient")
+        amount = int(request.data.get("amount", 0))
+
+        if amount <= 0 or sender.xp < amount:
+            return Response({"error": "Insufficient XP or invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            recipient = User.objects.get(username=recipient_username)
+        except User.DoesNotExist:
+            return Response({"error": "Recipient not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        sender.xp -= amount
+        recipient.xp += amount
+        sender.save()
+        recipient.save()
+
+        return Response({"message": f"Transferred {amount} XP to {recipient_username}"})
