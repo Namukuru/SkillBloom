@@ -10,6 +10,12 @@ from .views import (
     send_sms,
     about_view,
     XPTransactionViewSet
+    complete_session,
+    rate_teacher,
+    scheduled_sessions,
+    user_sessions,
+    home_view,
+    create_skill_match,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -22,9 +28,15 @@ urlpatterns = [
     path("logout/", logout_view, name="logout"),
     path("send_sms/", send_sms, name="send_sms"),
     path("about/", about_view, name="about"),
+    path("home/", home_view, name="home"),
     path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("profile/", UserProfileView.as_view(), name="user_profile_api"),
     path("xp/", XPTransactionViewSet.as_view({"get": "list"}), name="xp_transactions"),
     
+    path('complete-session/<int:skill_match_id>/', complete_session, name='complete_session'),
+    path('rate-teacher/<int:skill_match_id>/', rate_teacher, name='rate_teacher'),
+    path('scheduled-sessions/', scheduled_sessions, name='scheduled_sessions'),
+    path('sessions/', user_sessions, name='user_sessions'),
+    path('api/kill_match/create/', create_skill_match, name='create_skill_match'),
 ]
