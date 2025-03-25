@@ -180,13 +180,13 @@ def find_match(request):
             {"match": None, "message": "No such skill found in the database"}
         )
 
-    # 🔹 Get users who have this skill to teach (not to learn)
+    # 🔹 Get users who have this skill
     potential_teachers = CustomUser.objects.filter(skills=learn_skill)
 
     if not potential_teachers.exists():
         return Response({"match": None, "message": "No users found with this skill"})
 
-    # 🔹 AI Matching: Compare similarity using NLP (if needed)
+    # 🔹 AI Matching: Compare similarity using NLP
     best_match = None
     highest_similarity = 0.0
 
@@ -202,19 +202,12 @@ def find_match(request):
                 best_match = teacher
 
     if best_match:
-        # Ensure the teacher teaches the exact skill that the user wants to learn
-        teacher_skill = (
-            best_match.skills.first().name if best_match.skills.exists() else None
-        )
-        if teacher_skill != learn_skill_name:
-            return Response({"match": None, "message": "No suitable teacher found"})
-
         return Response(
             {
                 "match": {
                     "id": best_match.id,
                     "name": best_match.fullName or best_match.email,
-                    "teaches": teacher_skill,  # Return the exact teach skill
+                    "teaches": learn_skill.name,
                     "proficiency": best_match.proficiency,
                     "similarity_score": round(highest_similarity, 2),
                 }

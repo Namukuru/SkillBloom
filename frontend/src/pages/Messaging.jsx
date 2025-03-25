@@ -98,13 +98,13 @@ export default function ChatPage() {
       const isoDateTime = new Date(dateTimeString).toISOString();
   
       const sessionData = {
-        user_id: userId,
+        user_id: userId, 
         teacher_id: teacherId,
         learn_skill: selectedSkill,
-        scheduled_date: isoDateTime,
-        student_phone: userPhoneNumber,
-        student_name: userName,
-        status: "pending"
+        scheduled_date: new Date(scheduledDate).toISOString(),
+        student_phone: userPhoneNumber, 
+        student_name: userName, 
+        status: "pending",
       };
   
       const sessionResponse = await axios.post(
@@ -146,9 +146,7 @@ export default function ChatPage() {
     <div>
       <Navbar />
       <div className="min-h-screen bg-gray-800 p-6 flex flex-col items-center text-white font-mono overflow-hidden relative">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-gray-900/50 to-black opacity-50 pointer-events-none"></div>
-
-        {/* Header */}
+                {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
