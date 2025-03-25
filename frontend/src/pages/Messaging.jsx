@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { MessageCircle, Calendar, User, Send } from "lucide-react";
+import { MessageCircle, Calendar, User, Send, Clock } from "lucide-react";
 import axios from "axios";
 import { sendSMS } from "@/lib/sms";
 import Navbar from "@/components/Navbar";
@@ -16,12 +16,14 @@ export default function ChatPage() {
   ]);
   const [feedback, setFeedback] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
   const [selectedSkill, setSelectedSkill] = useState(localStorage.getItem("selectedSkill") || "");
-  const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState("");
   const navigate = useNavigate();
 
-  // Check authentication on component mount
+  // Set minimum date to today
+  const today = new Date().toISOString().split('T')[0];
+
   useEffect(() => {
     const storedToken = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
     if (!storedToken) {
@@ -30,7 +32,6 @@ export default function ChatPage() {
       return;
     }
     setToken(storedToken);
-    setIsLoading(false);
   }, [navigate]);
 
   const handleSendMessage = () => {
@@ -47,23 +48,20 @@ export default function ChatPage() {
       return;
     }
   
-    if (!scheduledDate) {
-      alert("Please select a date and time");
+    if (!scheduledDate || !scheduledTime) {
+      alert("Please select both date and time");
       return;
     }
   
     try {
-      // Decode token to get user info
       const decodedToken = JSON.parse(atob(token.split('.')[1]));
       const userId = decodedToken.user_id;
       const userName = decodedToken.fullName || decodedToken.email || "User";
-      console.log("Decoded token:", decodedToken);
   
       if (!userId) {
         throw new Error("User ID not found in token");
       }
   
-      // Get phone number
       let userPhoneNumber = prompt("Enter phone number (+2547XXXXXXXX):");
       if (!userPhoneNumber?.match(/^\+2547\d{8}$/)) {
         alert("Invalid Kenyan phone format");
@@ -75,7 +73,6 @@ export default function ChatPage() {
         return;
       }
   
-      // Find teacher match
       const matchResponse = await axios.post(
         "http://localhost:8000/api/find_match/",
         { learn: selectedSkill },
@@ -89,34 +86,29 @@ export default function ChatPage() {
       
       const teacher = matchResponse.data.match?.name;
       const teacherId = matchResponse.data.match?.id;
-      const skillId = matchResponse.data.match?.id;
       const teachSkill = matchResponse.data.match?.teaches;
 
-      //const teachSkill = matchResponse.data.match?.selectedSkill; // Ensure this field exists in response
-      console.log("Matched teacher:", teacher, teacherId, teachSkill);
-      console.log(selectedSkill);
-  
       if (!teacher || !teacherId || !teachSkill) {
         alert("No available teachers for this skill");
         return;
       }
   
-      // Save session - Ensure correct field names
-      const sessionData = {
-        user_id: userId, // Corrected from "user"
-        teacher_id: teacherId, // Corrected from "teach_skill"
-        learn_skill: selectedSkill, // Corrected from skill ID to skill name
-        scheduled_date: new Date(scheduledDate).toISOString(), // Format remains correct
-        student_phone: userPhoneNumber, // Added correct field
-        student_name: userName, // Added correct field
-        status: "pending" // Ensure default status
-      };
-      
+      // Combine date and time
+      const dateTimeString = `${scheduledDate}T${scheduledTime}`;
+      const isoDateTime = new Date(dateTimeString).toISOString();
   
-      console.log("📡 Sending request:", JSON.stringify(sessionData));
+      const sessionData = {
+        user_id: userId,
+        teacher_id: teacherId,
+        learn_skill: selectedSkill,
+        scheduled_date: isoDateTime,
+        student_phone: userPhoneNumber,
+        student_name: userName,
+        status: "pending"
+      };
   
       const sessionResponse = await axios.post(
-        "http://localhost:8000/api/scheduled-sessions/", // Corrected endpoint
+        "http://localhost:8000/api/scheduled-sessions/",
         sessionData,
         {
           headers: {
@@ -126,11 +118,9 @@ export default function ChatPage() {
         }
       );
   
-      // Check for successful creation
-      if (sessionResponse.status === 201 || sessionResponse.data.status === "success") {
+      if (sessionResponse.status === 201) {
         try {
-          // Send SMS
-          await sendSMS(userPhoneNumber, selectedSkill, userName, scheduledDate);
+          await sendSMS(userPhoneNumber, selectedSkill, userName, `${scheduledDate} at ${scheduledTime}`);
           alert("✓ Session booked! SMS confirmation sent");
         } catch (smsError) {
           console.warn("SMS failed:", smsError);
@@ -151,18 +141,6 @@ export default function ChatPage() {
       }
     }
   };
-  
-  const handleFeedbackChange = (e) => {
-    setFeedback(e.target.value);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-800 flex items-center justify-center">
-        <div className="text-white text-2xl">Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -190,7 +168,7 @@ export default function ChatPage() {
         </motion.div>
 
         <div className="flex flex-col md:flex-row gap-8 w-full max-w-5xl">
-          {/* Messaging Section */}
+          {/* Messaging Section - Kept original styling */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -230,7 +208,7 @@ export default function ChatPage() {
             </div>
           </motion.div>
 
-          {/* Scheduling Section */}
+          {/* Scheduling Section - Updated with date/time fields */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -241,32 +219,49 @@ export default function ChatPage() {
               <Calendar /> Schedule a Session
             </h2>
             <div className="flex-grow overflow-y-auto p-4 bg-gray-850 rounded-lg shadow-inner h-72">
-              <p className="text-gray-300">Plan your learning sessions effortlessly.</p>
+              <div className="space-y-6">
+                {/* Date Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Date</label>
+                  <Input
+                    type="date"
+                    min={today}
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    className="w-full bg-gray-800 border-gray-700 text-white"
+                  />
+                </div>
 
-              <div className="mt-6 text-gray-300">
-                <h3 className="text-xl font-semibold mb-3">Feedback</h3>
-                <textarea
-                  className="w-full p-3 bg-gray-850 border border-gray-700 text-white rounded-lg"
-                  rows="4"
-                  placeholder="Provide feedback about your session..."
-                  value={feedback}
-                  onChange={handleFeedbackChange}
-                  style={{ color: 'white', backgroundColor: '#2d2d2d' }}
-                ></textarea>
+                {/* Time Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Time</label>
+                  <Input
+                    type="time"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    className="w-full bg-gray-800 border-gray-700 text-white"
+                  />
+                </div>
+
+                {/* Feedback Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Feedback</label>
+                  <textarea
+                    className="w-full p-3 bg-gray-800 border border-gray-700 text-white rounded-lg"
+                    rows="4"
+                    placeholder="Provide feedback about your session..."
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
-            <div className="mt-4 flex gap-2">
-              <Input
-                className="bg-gray-850 border-gray-700 text-white rounded-lg flex-1"
-                type="date"
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
-              />
+            <div className="mt-4">
               <Button
-                className="bg-purple-500 hover:bg-purple-400 text-white py-2 px-4 rounded-lg"
+                className="w-full bg-purple-500 hover:bg-purple-400 text-white py-2 px-4 rounded-lg"
                 onClick={handleConfirmSchedule}
               >
-                Confirm
+                <Clock className="mr-2" /> Confirm Schedule
               </Button>
             </div>
           </motion.div>

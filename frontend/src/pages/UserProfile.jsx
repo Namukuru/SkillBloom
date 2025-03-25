@@ -2,36 +2,33 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { getValidToken } from "../utils/auth"; 
 
 const UserProfile = () => {
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [recipient, setRecipient] = useState(""); // Input for recipient
     const [amount, setAmount] = useState(""); // Input for XP amount
 
     useEffect(() => {
         const fetchProfile = async () => {
-            const token = sessionStorage.getItem('access_token');
+            const token = await getValidToken();
             if (!token) {
-                console.error("No authentication token found. Redirecting to login.");
-                navigate('/login'); // Redirect if not logged in
+                alert("Session expired. Please log in again.");
+                navigate("/login");
                 return;
             }
 
             try {
-                const response = await axios.get('http://127.0.0.1:8000/api/profile/', {
+                const response = await axios.get("http://127.0.0.1:8000/api/profile/", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                console.log("Profile Data:", response.data); // Debugging response
                 setProfile(response.data);
             } catch (err) {
                 console.error("API Error:", err.response ? err.response.data : err.message);
                 setError("Failed to fetch profile.");
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -39,32 +36,31 @@ const UserProfile = () => {
     }, [navigate]);
 
     const transferXP = async () => {
-        const token = sessionStorage.getItem('access_token');
+        const token = await getValidToken();
         if (!recipient || !amount) {
             alert("Please enter a recipient and amount.");
             return;
         }
 
         try {
-            await axios.post("http://localhost:8000/api/transfer_xp/", 
-                { recipient, amount }, 
+            await axios.post(
+                "http://localhost:8000/api/transfer_xp/",
+                { recipient, amount },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            alert(`Successfully transferred ${amount} XP to ${recipient}`);
 
-            // Update XP balance after transfer
+            alert(`Successfully transferred ${amount} XP to ${recipient}`);
             setProfile((prevProfile) => ({
                 ...prevProfile,
-                xp_points: prevProfile.xp_points - amount
+                xp_points: prevProfile.xp_points - amount,
             }));
         } catch (error) {
             alert(error.response?.data?.error || "Transfer failed");
         }
     };
 
-    if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
     if (error) return <div className="flex justify-center items-center h-screen text-red-500">{error}</div>;
-    if (!profile) return <div className="flex justify-center items-center h-screen">No profile data found.</div>;
+    if (!profile) return null; // Changed from loading message to null
 
     return (
         <div>
