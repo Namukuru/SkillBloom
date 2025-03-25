@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
@@ -6,7 +6,7 @@ import { MessageCircle, Calendar, User, Send } from "lucide-react";
 import axios from "axios";
 import { sendSMS } from "@/lib/sms";
 import Navbar from "@/components/Navbar";
-
+import { useNavigate } from "react-router-dom";
 
 export default function ChatPage() {
   const [message, setMessage] = useState("");
@@ -17,7 +17,21 @@ export default function ChatPage() {
   const [feedback, setFeedback] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [selectedSkill, setSelectedSkill] = useState(localStorage.getItem("selectedSkill") || "");
+  const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useState("");
+  const navigate = useNavigate();
 
+  // Check authentication on component mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+    if (!storedToken) {
+      alert("Please log in to access this page");
+      navigate("/login");
+      return;
+    }
+    setToken(storedToken);
+    setIsLoading(false);
+  }, [navigate]);
 
   const handleSendMessage = () => {
     if (message.trim()) {
@@ -27,88 +41,118 @@ export default function ChatPage() {
   };
 
   const handleConfirmSchedule = async () => {
+    if (!token) {
+      alert("Please log in to schedule a session");
+      navigate("/login");
+      return;
+    }
+  
     if (!scheduledDate) {
-        alert("Please select a date before confirming.");
-        return;
+      alert("Please select a date and time");
+      return;
     }
-
+  
     try {
-        const token = sessionStorage.getItem("token");
-        if (!token) {
-            console.error("❌ No token found. User might not be logged in.");
-            alert("You need to log in first!");
-            return;
+      // Decode token to get user info
+      const decodedToken = JSON.parse(atob(token.split('.')[1]));
+      const userId = decodedToken.user_id;
+      const userName = decodedToken.fullName || decodedToken.email || "User";
+      console.log("Decoded token:", decodedToken);
+  
+      if (!userId) {
+        throw new Error("User ID not found in token");
+      }
+  
+      // Get phone number
+      let userPhoneNumber = prompt("Enter phone number (+2547XXXXXXXX):");
+      if (!userPhoneNumber?.match(/^\+2547\d{8}$/)) {
+        alert("Invalid Kenyan phone format");
+        return;
+      }
+  
+      if (!selectedSkill) {
+        alert("Please select a skill first");
+        return;
+      }
+  
+      // Find teacher match
+      const matchResponse = await axios.post(
+        "http://localhost:8000/api/find_match/",
+        { learn: selectedSkill },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
         }
-
-        const decodedToken = JSON.parse(atob(token.split('.')[1]));
-        console.log("🔑 Decoded Token:", decodedToken); // Debugging
-
-        const userName = decodedToken.fullName || decodedToken.email || "Unknown User"; // Ensure student name is assigned
-
-        if (!userName) {
-            console.error("❌ Error: User name is missing!");
-            alert("User name could not be retrieved. Please log in again.");
-            return;
+      );
+  
+      const teacher = matchResponse.data.match?.name;
+      const teacherId = matchResponse.data.match?.id;
+      if (!teacher || !teacherId) {
+        alert("No available teachers for this skill");
+        return;
+      }
+  
+      // Save session - Updated to match your endpoint
+      const sessionData = {
+        user_id: userId,
+        teacher_id: teacherId,
+        skill: selectedSkill,
+        scheduled_date: new Date(scheduledDate).toISOString(),
+        student_phone: userPhoneNumber,
+        student_name: userName,
+        status: "pending" // Add any required status field
+      };
+  
+      const sessionResponse = await axios.post(
+        "http://localhost:8000/api/scheduled-sessions/", // Your existing endpoint
+        sessionData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
         }
-
-        let userPhoneNumber = prompt("Enter your phone number (e.g., +2547XXXXXXXX):");
-        if (!userPhoneNumber || !userPhoneNumber.match(/^\+2547\d{8}$/)) {
-            alert("Invalid phone number format. Please use +2547XXXXXXXX.");
-            return;
+      );
+  
+      // Check for successful creation
+      if (sessionResponse.status === 201) {
+        try {
+          // Send SMS
+          await sendSMS(userPhoneNumber, selectedSkill, userName, scheduledDate);
+          alert("✓ Session booked! SMS confirmation sent");
+        } catch (smsError) {
+          console.warn("SMS failed:", smsError);
+          alert("✓ Session booked! (SMS not sent)");
         }
-
-        if (!selectedSkill) {
-            console.error("⚠️ Error: selectedSkill is undefined or empty.");
-            alert("Please select a skill before scheduling.");
-            return;
-        }
-
-        console.log("🔍 Finding match for skill:", selectedSkill);
-
-        const matchResponse = await axios.post("http://localhost:8000/api/find_match/", {
-            learn: selectedSkill.trim(),
-        });
-
-        const matchData = matchResponse.data;
-        if (!matchData.match) {
-            alert("No matching teacher found.");
-            return;
-        }
-
-        const teacher = matchData.match.name;
-        console.log("🎯 Matched with teacher:", teacher);
-
-        // Prepare data to be sent to backend
-        const smsData = {
-            phone_number: userPhoneNumber,
-            skill_name: selectedSkill,
-            scheduled_date: scheduledDate,
-            student: userName,  // Use user name from the decoded token
-        };
-
-        console.log("📡 Sending SMS:", smsData);
-
-        // Send request to backend to send SMS
-        const smsResponse = await sendSMS(userPhoneNumber, selectedSkill, userName, scheduledDate);
-
-        if (smsResponse && (smsResponse.status === 200 || smsResponse.status === 201)) {
-            alert("✅ Session confirmed and SMS sent!");
-        } else {
-            console.error("❌ Failed to send SMS:", smsResponse);
-            alert("❌ Failed to send SMS. Please try again.");
-        }
-
+      } else {
+        throw new Error("Failed to save session");
+      }
+  
     } catch (error) {
-        console.error("❌ Error scheduling session:", error);
-        alert("Something went wrong. Please try again.");
+      console.error("Booking error:", error);
+      if (error.response?.status === 404) {
+        alert("Server error: Endpoint not found. Contact support.");
+      } else if (error.response?.data?.detail) {
+        alert(`Error: ${error.response.data.detail}`);
+      } else {
+        alert("Failed to schedule. Please try again.");
+      }
     }
-};
-
-
+  };
 
   const handleFeedbackChange = (e) => {
     setFeedback(e.target.value);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-800 flex items-center justify-center">
+        <div className="text-white text-2xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -129,7 +173,7 @@ export default function ChatPage() {
           </p>
           <Button
             className="mt-4 bg-blue-500 hover:bg-blue-400 text-white py-2 px-4 rounded-lg"
-            onClick={() => window.location.href = "/profile"} // Redirect to profile page
+            onClick={() => navigate("/profile")}
           >
             <User className="mr-2" /> View Profile
           </Button>
@@ -147,7 +191,6 @@ export default function ChatPage() {
               <MessageCircle /> Chat
             </h2>
             <div className="flex-grow overflow-y-auto p-4 bg-gray-850 rounded-lg shadow-inner h-72">
-              {/* Chat messages */}
               <div className="mt-4 text-gray-300 space-y-4">
                 {messages.map((msg, index) => (
                   <div key={index} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
@@ -165,12 +208,12 @@ export default function ChatPage() {
                 className="bg-gray-850 border-gray-700 text-white rounded-lg flex-1"
                 placeholder="Type a message..."
                 value={message}
-                onChange={(e) => setMessage(e.target.value)} // Update message input
-                style={{ color: 'white', backgroundColor: '#2d2d2d' }} // Add color to make the text visible
+                onChange={(e) => setMessage(e.target.value)}
+                style={{ color: 'white', backgroundColor: '#2d2d2d' }}
               />
               <Button
                 className="bg-purple-500 hover:bg-purple-400 text-white py-2 px-4 rounded-lg"
-                onClick={handleSendMessage} // Handle send message
+                onClick={handleSendMessage}
               >
                 <Send className="mr-2" /> Send
               </Button>
@@ -190,7 +233,6 @@ export default function ChatPage() {
             <div className="flex-grow overflow-y-auto p-4 bg-gray-850 rounded-lg shadow-inner h-72">
               <p className="text-gray-300">Plan your learning sessions effortlessly.</p>
 
-              {/* Feedback Section */}
               <div className="mt-6 text-gray-300">
                 <h3 className="text-xl font-semibold mb-3">Feedback</h3>
                 <textarea
@@ -198,8 +240,8 @@ export default function ChatPage() {
                   rows="4"
                   placeholder="Provide feedback about your session..."
                   value={feedback}
-                  onChange={handleFeedbackChange} // Handle feedback text change
-                  style={{ color: 'white', backgroundColor: '#2d2d2d' }} // Add color to make text visible in feedback section
+                  onChange={handleFeedbackChange}
+                  style={{ color: 'white', backgroundColor: '#2d2d2d' }}
                 ></textarea>
               </div>
             </div>
@@ -208,11 +250,11 @@ export default function ChatPage() {
                 className="bg-gray-850 border-gray-700 text-white rounded-lg flex-1"
                 type="date"
                 value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)} // Handle date input
+                onChange={(e) => setScheduledDate(e.target.value)}
               />
               <Button
                 className="bg-purple-500 hover:bg-purple-400 text-white py-2 px-4 rounded-lg"
-                onClick={handleConfirmSchedule} // Confirm scheduling
+                onClick={handleConfirmSchedule}
               >
                 Confirm
               </Button>

@@ -7,7 +7,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated , AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import requests
@@ -22,14 +22,17 @@ from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 
 from backend.settings import AFRICASTALKING_API_KEY, AFRICASTALKING_USERNAME
-from .models import Skill, CustomUser, SkillMatch, Rating
+from .models import Skill, CustomUser, ScheduledSession, Rating
 from api.serializers import SkillSerializer, UserProfileSerializer, SkillMatchSerializer
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+
 @api_view(["GET"])
 def hello_world(request):
     return Response({"message": "Hello, world!"})
+
 
 def about_view(request):
     data = {
@@ -39,15 +42,12 @@ def about_view(request):
     }
     return JsonResponse(data)
 
+
 def home_view(request):
     data = {
         "title": "Welcome to SkillBloom",
         "description": "Join SkillBloom to learn new skills, teach what you know, and connect with a global community of learners and professionals.",
-        "features": [
-            "Global Community",
-            "Skill Exchange",
-            "Personal Growth"
-        ],
+        "features": ["Global Community", "Skill Exchange", "Personal Growth"],
         "version": "1.0.0",
     }
     return JsonResponse(data)
@@ -211,7 +211,7 @@ def find_match(request):
 
 
 class UserProfileView(APIView):
-    #authentication_classes = [JWTAuthentication]
+    # authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -224,11 +224,6 @@ class UserProfileView(APIView):
 
         serializer = UserProfileSerializer(user, many=False)  # Serialize single user
         return Response(serializer.data)
-    
-
-    
-    
-
 
 
 API_KEY = AFRICASTALKING_API_KEY
@@ -288,7 +283,9 @@ def send_sms(request):
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
+
 User = get_user_model()
+
 
 class XPTransactionViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
@@ -300,12 +297,17 @@ class XPTransactionViewSet(viewsets.ViewSet):
         amount = int(request.data.get("amount", 0))
 
         if amount <= 0 or sender.xp < amount:
-            return Response({"error": "Insufficient XP or invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Insufficient XP or invalid amount"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             recipient = User.objects.get(username=recipient_username)
         except User.DoesNotExist:
-            return Response({"error": "Recipient not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Recipient not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         sender.xp -= amount
         recipient.xp += amount
@@ -313,21 +315,24 @@ class XPTransactionViewSet(viewsets.ViewSet):
         recipient.save()
 
         return Response({"message": f"Transferred {amount} XP to {recipient_username}"})
-@api_view(['POST'])
+
+
+@api_view(["POST"])
 def complete_session(request, skill_match_id):
-    skill_match = SkillMatch.objects.get(id=skill_match_id)
+    skill_match = ScheduledSession.objects.get(id=skill_match_id)
     if not skill_match.is_completed:
         skill_match.is_completed = True
         skill_match.save()
         return Response({"message": "Session marked as completed."})
     return Response({"message": "Session already completed."})
 
-@api_view(['POST'])
+
+@api_view(["POST"])
 def rate_teacher(request, skill_match_id):
-    skill_match = SkillMatch.objects.get(id=skill_match_id)
+    skill_match = ScheduledSession.objects.get(id=skill_match_id)
     if skill_match.is_completed and not skill_match.is_rated:
-        rating = request.data.get('rating')
-        feedback = request.data.get('feedback', '')
+        rating = request.data.get("rating")
+        feedback = request.data.get("feedback", "")
 
         # Create the rating
         Rating.objects.create(
@@ -335,7 +340,7 @@ def rate_teacher(request, skill_match_id):
             learner=skill_match.user,  # Learner is the user who requested the session
             teacher=skill_match.teach_skill.user,  # Teacher is the user offering the skill
             rating=rating,
-            feedback=feedback
+            feedback=feedback,
         )
 
         # Allocate credits to the teacher based on the rating
@@ -349,53 +354,35 @@ def rate_teacher(request, skill_match_id):
         return Response({"message": "Teacher rated successfully!"})
     return Response({"message": "Session not completed or already rated."})
 
-@api_view(['POST'])
+
+@api_view(["POST"])
 def scheduled_sessions(request):
-    user_id = request.GET.get('user_id')
+    user_id = request.GET.get("user_id")
     if not user_id:
-        return JsonResponse({'status': 'error', 'message': 'User ID is required'}, status=400)
+        return JsonResponse(
+            {"status": "error", "message": "User ID is required"}, status=400
+        )
 
     try:
-        # Fetch all SkillMatch entries for the user
-        sessions = SkillMatch.objects.filter(user_id=user_id).values(
-            'id', 'teach_skill__name', 'learn_skill__name', 'scheduled_date', 'is_completed', 'is_rated'
+        # Fetch all ScheduledSession entries for the user
+        sessions = ScheduledSession.objects.filter(user_id=user_id).values(
+            "id",
+            "teach_skill__name",
+            "learn_skill__name",
+            "scheduled_date",
+            "is_completed",
+            "is_rated",
         )
-        return JsonResponse({'status': 'success', 'scheduled_sessions': list(sessions)})
+        return JsonResponse({"status": "success", "scheduled_sessions": list(sessions)})
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 def user_sessions(request):
     user_id = request.user.id  # Get the current user's ID
-    sessions = SkillMatch.objects.filter(
-        models.Q(user_id=user_id) | models.Q(teach_skill__user_id=user_id))
+    sessions = ScheduledSession.objects.filter(
+        models.Q(user_id=user_id) | models.Q(teach_skill__user_id=user_id)
+    )
     serializer = SkillMatchSerializer(sessions, many=True)
     return Response(serializer.data)
-
-@csrf_exempt
-def create_skill_match(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            user_id = data.get('user_id')
-            teach_skill_id = data.get('teach_skill_id')
-            learn_skill_id = data.get('learn_skill_id')
-            scheduled_date = data.get('scheduled_date')
-
-            user = CustomUser.objects.get(id=user_id)
-            teach_skill = Skill.objects.get(id=teach_skill_id)
-            learn_skill = Skill.objects.get(id=learn_skill_id)
-
-            skill_match = SkillMatch.objects.create(
-                user=user,
-                teach_skill=teach_skill,
-                learn_skill=learn_skill,
-                scheduled_date=scheduled_date
-            )
-
-            return JsonResponse({'status': 'success', 'skill_match_id': skill_match.id})
-
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)

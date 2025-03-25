@@ -15,7 +15,6 @@ from .views import (
     scheduled_sessions,
     user_sessions,
     home_view,
-    create_skill_match,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -41,5 +40,4 @@ urlpatterns = [
     path("rate-teacher/<int:skill_match_id>/", rate_teacher, name="rate_teacher"),
     path("scheduled-sessions/", scheduled_sessions, name="scheduled_sessions"),
     path("sessions/", user_sessions, name="user_sessions"),
-    path("api/kill_match/create/", create_skill_match, name="create_skill_match"),
 ]
