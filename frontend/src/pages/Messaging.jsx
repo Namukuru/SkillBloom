@@ -57,6 +57,7 @@ export default function ChatPage() {
       const decodedToken = JSON.parse(atob(token.split('.')[1]));
       const userId = decodedToken.user_id;
       const userName = decodedToken.fullName || decodedToken.email || "User";
+      console.log("Current Token:", token);
   
       if (!userId) {
         throw new Error("User ID not found in token");
@@ -72,7 +73,7 @@ export default function ChatPage() {
         alert("Please select a skill first");
         return;
       }
-  
+      
       const matchResponse = await axios.post(
         "http://localhost:8000/api/find_match/",
         { learn: selectedSkill },

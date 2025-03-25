@@ -11,22 +11,32 @@ const SessionsPage = () => {
     useEffect(() => {
         const fetchSessions = async () => {
             try {
-                const token = await getValidToken();
-                if (!token) {
-                    window.location.href = "/login";
-                    return;
-                }
-
-                const response = await axios.get("/api/sessions/", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                setSessions(Array.isArray(response.data) ? response.data : response.data.sessions || []);
+              const token = await getValidToken();
+              if (!token) {
+                window.location.href = "/login";
+                return;
+              }
+          
+              const response = await axios.get("/api/sessions/", {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+          
+              setSessions(response.data?.sessions || []);
             } catch (err) {
-                console.error("API Error:", err);
+              console.error("API Error:", {
+                message: err.message,
+                status: err.response?.status,
+                data: err.response?.data,
+              });
+          
+              if (err.response?.status === 401) { // Token invalid
+                localStorage.removeItem("authToken"); // Clear bad token
+                window.location.href = "/login"; // Force re-authentication
+              } else {
                 setError(err.message);
+              }
             }
-        };
+          };
 
         fetchSessions();
     }, []);
