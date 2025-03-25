@@ -99,26 +99,32 @@ def logout_view(request):
 
 @api_view(["POST"])
 def register_view(request):
+    # Get data from request
     email = request.data.get("email")
     password = request.data.get("password")
     fullName = request.data.get("fullName")  # Match frontend field
-    skills = request.data.get("skills", [])  # Expecting a list
-    proficiency = request.data.get("proficiency", "beginner")  # Default value
+    skill_names = request.data.get("skill_names", [])  # Expecting a list of skill names
+    proficiency = request.data.get("proficiency", "beginner")
 
+    # Validation
     if not email or not password:
         return Response(
-            {"error": "Email and password are required"}, status=HTTP_400_BAD_REQUEST
+            {"error": "Email and password are required"}, 
+            status=HTTP_400_BAD_REQUEST
         )
 
     if CustomUser.objects.filter(email=email).exists():
-        return Response({"error": "Email already exists"}, status=HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Email already exists"}, 
+            status=HTTP_400_BAD_REQUEST
+        )
 
     try:
         validate_password(password)
     except ValidationError as e:
         return Response({"error": e.messages}, status=HTTP_400_BAD_REQUEST)
 
-    # ✅ Create user
+    # Create user
     user = CustomUser.objects.create_user(
         username=email,
         email=email,
@@ -127,12 +133,12 @@ def register_view(request):
         proficiency=proficiency,
     )
 
-    # ✅ Assign skills
-    if skills:
-        skill_objs = Skill.objects.filter(name__in=skills)
-        user.skills.set(skill_objs)
+    # Process skills - create if they don't exist
+    for skill_name in skill_names:
+        skill, created = Skill.objects.get_or_create(name=skill_name)
+        user.skills.add(skill)
 
-    # ✅ Generate token
+    # Generate token
     token = get_tokens_for_user(user)
 
     return Response(
@@ -142,11 +148,12 @@ def register_view(request):
                 "id": user.id,
                 "email": user.email,
                 "fullName": user.fullName,
+                "skills": list(user.skills.values_list('name', flat=True)),
+                "proficiency": user.proficiency
             },
         },
         status=HTTP_201_CREATED,
     )
-
 
 @api_view(["GET"])
 def get_skills(request):

@@ -14,7 +14,7 @@ const Navbar = () => {
     logout();
 
     // Redirect to home page
-    navigate("/", { replace: true });
+    navigate("/home", { replace: true });
   };
 
   return (
@@ -68,18 +68,6 @@ const Navbar = () => {
                       }
                     >
                       Skill Exchange
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to="/message"
-                      className={({ isActive }) =>
-                        `px-3 py-2 rounded-md text-sm font-medium ${
-                          isActive ? "bg-purple-500 text-white" : "text-gray-300 hover:bg-purple-600 hover:text-white"
-                        }`
-                      }
-                    >
-                      Messages
                     </NavLink>
                   </li>
                   <li>

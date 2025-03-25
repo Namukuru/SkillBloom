@@ -23,8 +23,8 @@ function Login() {
       const { access, refresh } = response.data.token;
   
       // Store tokens in session storage
-      sessionStorage.setItem("access_token", access);
-      sessionStorage.setItem("refresh_token", refresh);
+      sessionStorage.setItem("access_token", response.data.token.access);
+      sessionStorage.setItem("refresh_token", response.data.token.refresh);
   
       // Set Authorization header globally
       api.defaults.headers.common["Authorization"] = `Bearer ${access}`;

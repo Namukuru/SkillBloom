@@ -11,7 +11,7 @@ const SessionsPage = () => {
     useEffect(() => {
         const fetchSessions = async () => {
             try {
-                const token = localStorage.getItem('access_token');
+                const token = sessionStorage.getItem('access_token');
                 if (!token) {
                     alert("Please log in to view your sessions.");
                     window.location.href = "/login";
