@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
@@ -356,33 +356,72 @@ def rate_teacher(request, skill_match_id):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])  # Ensure user is logged in
 def scheduled_sessions(request):
-    user_id = request.GET.get("user_id")
-    if not user_id:
-        return JsonResponse(
-            {"status": "error", "message": "User ID is required"}, status=400
+    try:
+        # Get data from request body
+        user_id = request.data.get("user_id")
+        teacher_id = request.data.get("teacher_id")
+        learn_skill_name = request.data.get("learn_skill")
+        scheduled_date = request.data.get("scheduled_date")
+
+        # Validate required fields
+        if not (user_id and teacher_id and learn_skill_name and scheduled_date):
+            return JsonResponse(
+                {"status": "error", "message": "Missing required fields"},
+                status=400,
+            )
+
+        # Fetch user and teacher
+        try:
+            user = CustomUser.objects.get(id=user_id)
+            teacher = CustomUser.objects.get(id=teacher_id)
+        except CustomUser.DoesNotExist:
+            return JsonResponse(
+                {"status": "error", "message": "User or Teacher not found"},
+                status=404,
+            )
+
+        # Fetch skill object (assuming `Skill` model has `name` field)
+        try:
+            learn_skill = Skill.objects.get(name=learn_skill_name)
+        except Skill.DoesNotExist:
+            return JsonResponse(
+                {"status": "error", "message": "Learn skill not found"},
+                status=404,
+            )
+
+        # Create and save the session
+        session = ScheduledSession.objects.create(
+            user=user,
+            teach_skill=learn_skill,  # Assuming teach_skill is the skill being taught
+            learn_skill=learn_skill,
+            scheduled_date=scheduled_date,
+            is_completed=False,
+            is_rated=False,
         )
 
-    try:
-        # Fetch all ScheduledSession entries for the user
-        sessions = ScheduledSession.objects.filter(user_id=user_id).values(
-            "id",
-            "teach_skill__name",
-            "learn_skill__name",
-            "scheduled_date",
-            "is_completed",
-            "is_rated",
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": "Session created successfully",
+                "session_id": session.id,
+            }
         )
-        return JsonResponse({"status": "success", "scheduled_sessions": list(sessions)})
+
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def user_sessions(request):
-    user_id = request.user.id  # Get the current user's ID
+    user = request.user  # Get the current user
+
+    # Fetch sessions where the user is either the learner or the teacher
     sessions = ScheduledSession.objects.filter(
-        models.Q(user_id=user_id) | models.Q(teach_skill__user_id=user_id)
+        models.Q(user=user) | models.Q(teach_skill__teachers=user)
     )
+
     serializer = SkillMatchSerializer(sessions, many=True)
     return Response(serializer.data)

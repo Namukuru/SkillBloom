@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom'; // For navigation
 import CompleteSessionButton from '../components/ui/CompleteSessionbtn';
 import Navbar from "@/components/Navbar";
 
@@ -9,20 +8,33 @@ const SessionsPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Fetch sessions when the component mounts
     useEffect(() => {
         const fetchSessions = async () => {
             try {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert("Please log in to view your sessions.");
+                    window.location.href = "/login";
+                    return;
+                }
+
                 const response = await axios.get('/api/sessions/', {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                 });
-                console.log("Sessions Data:", response.data); // Debug: Log the sessions data
-                console.log("Type of sessions data:", typeof response.data); // Debug: Log the type of data
-                setSessions(response.data);
+
+                console.log("Sessions Data:", response.data); // Debug API response
+
+                // Ensure data is in array format
+                setSessions(Array.isArray(response.data) ? response.data : response.data.sessions || []);
             } catch (err) {
-                console.error("API Error:", err); // Debug: Log the error
+                console.error("API Error:", err);
+
+                if (err.response?.status === 401) {
+                    alert("Session expired. Please log in again.");
+                    localStorage.removeItem("access_token");
+                    window.location.href = "/login";
+                }
+
                 setError(err.message);
             } finally {
                 setLoading(false);
@@ -30,7 +42,7 @@ const SessionsPage = () => {
         };
 
         fetchSessions();
-    }, []); // Empty dependency array means this runs only once when the component mounts
+    }, []);
 
     if (loading) {
         return <div className="flex justify-center items-center h-screen">Loading...</div>;
@@ -45,22 +57,20 @@ const SessionsPage = () => {
             <Navbar isAuthenticated={true} />
             <div className="p-6">
                 <h1 className="text-3xl font-bold text-gray-800 mb-6">Your Sessions</h1>
-                {!Array.isArray(sessions) ? (
-                    <p className="text-gray-600">Invalid sessions data.</p>
-                ) : sessions.length === 0 ? (
+                {!sessions.length ? (
                     <p className="text-gray-600">No sessions found.</p>
                 ) : (
                     <div className="space-y-4">
                         {sessions.map((session) => (
                             <div key={session.id} className="bg-gray-50 p-4 rounded-lg shadow-sm">
                                 <p className="text-gray-800">
-                                    <strong>Teaching:</strong> {session.teach_skill?.name || "N/A"}
+                                    <strong>Teaching:</strong> {session.teach_skill?.name ?? "N/A"}
                                 </p>
                                 <p className="text-gray-800">
-                                    <strong>Learning:</strong> {session.learn_skill?.name || "N/A"}
+                                    <strong>Learning:</strong> {session.learn_skill?.name ?? "N/A"}
                                 </p>
                                 <p className="text-gray-600">
-                                    <strong>With:</strong> {session.user?.fullName || "N/A"} ({session.user?.email || "N/A"})
+                                    <strong>With:</strong> {session.user?.fullName ?? "N/A"} ({session.user?.email ?? "N/A"})
                                 </p>
                                 <p className="text-gray-600">
                                     <strong>Status:</strong> {session.is_completed ? "Completed" : "Scheduled"}

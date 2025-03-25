@@ -86,27 +86,37 @@ export default function ChatPage() {
           }
         }
       );
-  
+      
       const teacher = matchResponse.data.match?.name;
       const teacherId = matchResponse.data.match?.id;
-      if (!teacher || !teacherId) {
+      const skillId = matchResponse.data.match?.id;
+      const teachSkill = matchResponse.data.match?.teaches;
+
+      //const teachSkill = matchResponse.data.match?.selectedSkill; // Ensure this field exists in response
+      console.log("Matched teacher:", teacher, teacherId, teachSkill);
+      console.log(selectedSkill);
+  
+      if (!teacher || !teacherId || !teachSkill) {
         alert("No available teachers for this skill");
         return;
       }
   
-      // Save session - Updated to match your endpoint
+      // Save session - Ensure correct field names
       const sessionData = {
-        user_id: userId,
-        teacher_id: teacherId,
-        skill: selectedSkill,
-        scheduled_date: new Date(scheduledDate).toISOString(),
-        student_phone: userPhoneNumber,
-        student_name: userName,
-        status: "pending" // Add any required status field
+        user_id: userId, // Corrected from "user"
+        teacher_id: teacherId, // Corrected from "teach_skill"
+        learn_skill: selectedSkill, // Corrected from skill ID to skill name
+        scheduled_date: new Date(scheduledDate).toISOString(), // Format remains correct
+        student_phone: userPhoneNumber, // Added correct field
+        student_name: userName, // Added correct field
+        status: "pending" // Ensure default status
       };
+      
+  
+      console.log("📡 Sending request:", JSON.stringify(sessionData));
   
       const sessionResponse = await axios.post(
-        "http://localhost:8000/api/scheduled-sessions/", // Your existing endpoint
+        "http://localhost:8000/api/scheduled-sessions/", // Corrected endpoint
         sessionData,
         {
           headers: {
@@ -117,7 +127,7 @@ export default function ChatPage() {
       );
   
       // Check for successful creation
-      if (sessionResponse.status === 201) {
+      if (sessionResponse.status === 201 || sessionResponse.data.status === "success") {
         try {
           // Send SMS
           await sendSMS(userPhoneNumber, selectedSkill, userName, scheduledDate);
@@ -141,7 +151,7 @@ export default function ChatPage() {
       }
     }
   };
-
+  
   const handleFeedbackChange = (e) => {
     setFeedback(e.target.value);
   };

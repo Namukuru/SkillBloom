@@ -78,9 +78,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class SkillMatchSerializer(serializers.ModelSerializer):
-    teach_skill = SkillSerializer()
-    learn_skill = SkillSerializer()
-    user = CustomUserSerializer()
+    teach_skill = serializers.PrimaryKeyRelatedField(
+        queryset=Skill.objects.all()
+    )  # Expect skill ID
+    learn_skill = serializers.PrimaryKeyRelatedField(
+        queryset=Skill.objects.all()
+    )  # Expect skill ID
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=CustomUser.objects.all()
+    )  # Expect user ID
 
     class Meta:
         model = ScheduledSession
@@ -89,6 +95,7 @@ class SkillMatchSerializer(serializers.ModelSerializer):
             "user",
             "teach_skill",
             "learn_skill",
+            "scheduled_date",  # Add this field
             "is_completed",
             "is_rated",
         ]
