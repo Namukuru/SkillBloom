@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import api from "../utils/AxiosConfig"; // Import configured Axios instance
+import api from "../utils/axiosConfig"; // Import configured Axios instance
 import { AuthContext } from "../context/AuthContext";
 
 function Login() {

@@ -9,7 +9,7 @@ from .views import (
     UserProfileView,
     send_sms,
     about_view,
-    XPTransactionViewSet
+    XPTransactionViewSet,
     complete_session,
     rate_teacher,
     scheduled_sessions,
@@ -33,10 +33,13 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("profile/", UserProfileView.as_view(), name="user_profile_api"),
     path("xp/", XPTransactionViewSet.as_view({"get": "list"}), name="xp_transactions"),
-    
-    path('complete-session/<int:skill_match_id>/', complete_session, name='complete_session'),
-    path('rate-teacher/<int:skill_match_id>/', rate_teacher, name='rate_teacher'),
-    path('scheduled-sessions/', scheduled_sessions, name='scheduled_sessions'),
-    path('sessions/', user_sessions, name='user_sessions'),
-    path('api/kill_match/create/', create_skill_match, name='create_skill_match'),
+    path(
+        "complete-session/<int:skill_match_id>/",
+        complete_session,
+        name="complete_session",
+    ),
+    path("rate-teacher/<int:skill_match_id>/", rate_teacher, name="rate_teacher"),
+    path("scheduled-sessions/", scheduled_sessions, name="scheduled_sessions"),
+    path("sessions/", user_sessions, name="user_sessions"),
+    path("api/kill_match/create/", create_skill_match, name="create_skill_match"),
 ]
