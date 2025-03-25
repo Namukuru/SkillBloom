@@ -15,28 +15,37 @@ function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
-
+  
     try {
       const response = await api.post("/login/", { username: email, password });
-
+  
+      // Extract tokens
+      const { access, refresh } = response.data.token;
+  
       // Store tokens in session storage
-      sessionStorage.setItem("access_token", response.data.token.access);
-      sessionStorage.setItem("refresh_token", response.data.token.refresh);
-
+      sessionStorage.setItem("access_token", access);
+      sessionStorage.setItem("refresh_token", refresh);
+  
       // Set Authorization header globally
-      api.defaults.headers.common["Authorization"] = `Bearer ${response.data.token.access}`;
-
+      api.defaults.headers.common["Authorization"] = `Bearer ${access}`;
+  
       // Update authentication state
       login();
+  
       alert("✅ Login successful!");
       navigate("/home", { replace: true });
-
+  
+      // Debugging: Confirm token storage
+      console.log("Stored Access Token After Login:", sessionStorage.getItem("access_token"));
+  
     } catch (error) {
+      console.error("Login Error:", error);
       setError(error.response?.data?.detail || "❌ Invalid credentials. Try again.");
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-800">
