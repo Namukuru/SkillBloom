@@ -7,6 +7,7 @@ import axios from "axios";
 import { sendSMS } from "@/lib/sms";
 import Navbar from "@/components/Navbar";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from 'jwt-decode';
 
 export default function ChatPage() {
   const [message, setMessage] = useState("");
@@ -54,7 +55,8 @@ export default function ChatPage() {
     }
   
     try {
-      const decodedToken = JSON.parse(atob(token.split('.')[1]));
+     
+      const decodedToken = jwtDecode(token); 
       const userId = decodedToken.user_id;
       const userName = decodedToken.fullName || decodedToken.email || "User";
       console.log("Current Token:", token);
@@ -63,17 +65,18 @@ export default function ChatPage() {
         throw new Error("User ID not found in token");
       }
   
-      let userPhoneNumber = prompt("Enter phone number (+2547XXXXXXXX):");
-      if (!userPhoneNumber?.match(/^\+2547\d{8}$/)) {
-        alert("Invalid Kenyan phone format");
+      const userPhoneNumber = prompt("Enter your phone number (07XXXXXXXX):");
+      if (!userPhoneNumber?.match(/^07\d{8}$/)) {
+        alert("❌ Invalid format! Please use 07XXXXXXXX (10 digits). Example: 0712345678");
         return;
       }
-  
+      
       if (!selectedSkill) {
         alert("Please select a skill first");
         return;
       }
-      
+  
+      // Find matching teacher
       const matchResponse = await axios.post(
         "http://localhost:8000/api/find_match/",
         { learn: selectedSkill },
@@ -94,20 +97,20 @@ export default function ChatPage() {
         return;
       }
   
-      // Combine date and time
-      const dateTimeString = `${scheduledDate}T${scheduledTime}`;
-      const isoDateTime = new Date(dateTimeString).toISOString();
-  
+      // Prepare session data
       const sessionData = {
         user_id: userId,
         teacher_id: teacherId,
         learn_skill: selectedSkill,
-        scheduled_date: isoDateTime,
+        scheduled_date: `${scheduledDate}T${scheduledTime}:00`, // ISO format with seconds
         student_phone: userPhoneNumber,
         student_name: userName,
-        status: "pending"
+        status: "pending",
       };
-  
+
+      console.log("Sending session data:", sessionData); // Debug log
+
+      // Save session
       const sessionResponse = await axios.post(
         "http://localhost:8000/api/scheduled-sessions/",
         sessionData,
@@ -119,26 +122,44 @@ export default function ChatPage() {
         }
       );
   
-      if (sessionResponse.status === 201) {
+      if (sessionResponse.status === 201 || sessionResponse.status === 200) {
         try {
           await sendSMS(userPhoneNumber, selectedSkill, userName, `${scheduledDate} at ${scheduledTime}`);
           alert("✓ Session booked! SMS confirmation sent");
+          // Clear form after successful booking
+          setScheduledDate("");
+          setScheduledTime("");
+          setFeedback("");
         } catch (smsError) {
           console.warn("SMS failed:", smsError);
           alert("✓ Session booked! (SMS not sent)");
         }
       } else {
-        throw new Error("Failed to save session");
+        throw new Error(`Unexpected response status: ${sessionResponse.status}`);
       }
   
     } catch (error) {
       console.error("Booking error:", error);
-      if (error.response?.status === 404) {
-        alert("Server error: Endpoint not found. Contact support.");
-      } else if (error.response?.data?.detail) {
-        alert(`Error: ${error.response.data.detail}`);
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+        
+        if (error.response.status === 400) {
+          alert(`Validation error: ${JSON.stringify(error.response.data)}`);
+        } else if (error.response.status === 401) {
+          alert("Session expired. Please login again.");
+          navigate("/login");
+        } else if (error.response.status === 404) {
+          alert("Server error: Endpoint not found. Contact support.");
+        } else if (error.response.data?.detail) {
+          alert(`Error: ${error.response.data.detail}`);
+        } else {
+          alert(`Server error: ${error.response.status}`);
+        }
+      } else if (error.request) {
+        alert("No response from server. Check your connection.");
       } else {
-        alert("Failed to schedule. Please try again.");
+        alert(`Request setup error: ${error.message}`);
       }
     }
   };
@@ -147,8 +168,6 @@ export default function ChatPage() {
     <div>
       <Navbar />
       <div className="min-h-screen bg-gray-800 p-6 flex flex-col items-center text-white font-mono overflow-hidden relative">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-gray-900/50 to-black opacity-50 pointer-events-none"></div>
-
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -169,7 +188,7 @@ export default function ChatPage() {
         </motion.div>
 
         <div className="flex flex-col md:flex-row gap-8 w-full max-w-5xl">
-          {/* Messaging Section - Kept original styling */}
+          {/* Messaging Section */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -209,7 +228,7 @@ export default function ChatPage() {
             </div>
           </motion.div>
 
-          {/* Scheduling Section - Updated with date/time fields */}
+          {/* Scheduling Section */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -221,7 +240,6 @@ export default function ChatPage() {
             </h2>
             <div className="flex-grow overflow-y-auto p-4 bg-gray-850 rounded-lg shadow-inner h-72">
               <div className="space-y-6">
-                {/* Date Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">Date</label>
                   <Input
@@ -233,7 +251,6 @@ export default function ChatPage() {
                   />
                 </div>
 
-                {/* Time Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">Time</label>
                   <Input
@@ -244,7 +261,6 @@ export default function ChatPage() {
                   />
                 </div>
 
-                {/* Feedback Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">Feedback</label>
                   <textarea
