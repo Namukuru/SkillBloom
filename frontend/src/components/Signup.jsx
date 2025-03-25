@@ -89,9 +89,8 @@ const Signup = () => {
         alert("✅ Signup successful! Redirecting...");
       });
 
-      // Smooth redirect to dashboard
       setTimeout(() => {
-        navigate("/dashboard", { replace: true });
+        navigate("/home", { replace: true });
       }, 100);
     } catch (error) {
       console.error("Error:", error);

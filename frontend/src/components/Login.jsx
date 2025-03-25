@@ -29,7 +29,7 @@ function Login() {
       // Update authentication state
       login();
       alert("✅ Login successful!");
-      navigate("/profile", { replace: true });
+      navigate("/home", { replace: true });
 
     } catch (error) {
       setError(error.response?.data?.detail || "❌ Invalid credentials. Try again.");
