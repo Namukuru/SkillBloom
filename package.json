@@ -16,5 +16,8 @@
     "url": "https://github.com/Namukuru/SkillBloom/issues"
   },
   "homepage": "https://github.com/Namukuru/SkillBloom#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "jwt-decode": "^4.0.0"
+  }
 }

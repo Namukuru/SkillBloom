@@ -1,13 +1,14 @@
 import axios from "axios";
 const API_URL = "http://localhost:8000/api/send_sms/"; 
 
-export const sendSMS = async (phoneNumber, skillName, student, scheduledDate) => {
+export const sendSMS = async (phoneNumber, skillName, student, scheduledDate, scheduledTime) => {
     try {
         console.log("📡 Sending request to API:", API_URL, {
             phone_number: phoneNumber,
             skill_name: skillName,
             scheduled_date: scheduledDate,
-            student: student, // Ensure this is sent
+            student: student,
+            time: scheduledTime, // Ensure this is sent
         });
 
         const response = await axios.post(API_URL, {
@@ -15,6 +16,7 @@ export const sendSMS = async (phoneNumber, skillName, student, scheduledDate) =>
             skill_name: skillName,
             scheduled_date: scheduledDate,
             student: student,
+            time: scheduledTime,
         });
 
         console.log("✅ SMS sent successfully:", response);

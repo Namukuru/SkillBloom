@@ -21,6 +21,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 
+from backend import settings
 from backend.settings import AFRICASTALKING_API_KEY, AFRICASTALKING_USERNAME
 from .models import Skill, CustomUser, ScheduledSession, Rating
 from api.serializers import SkillSerializer, UserProfileSerializer, SkillMatchSerializer
@@ -109,15 +110,11 @@ def register_view(request):
     # Validation
     if not email or not password:
         return Response(
-            {"error": "Email and password are required"}, 
-            status=HTTP_400_BAD_REQUEST
+            {"error": "Email and password are required"}, status=HTTP_400_BAD_REQUEST
         )
 
     if CustomUser.objects.filter(email=email).exists():
-        return Response(
-            {"error": "Email already exists"}, 
-            status=HTTP_400_BAD_REQUEST
-        )
+        return Response({"error": "Email already exists"}, status=HTTP_400_BAD_REQUEST)
 
     try:
         validate_password(password)
@@ -148,12 +145,13 @@ def register_view(request):
                 "id": user.id,
                 "email": user.email,
                 "fullName": user.fullName,
-                "skills": list(user.skills.values_list('name', flat=True)),
-                "proficiency": user.proficiency
+                "skills": list(user.skills.values_list("name", flat=True)),
+                "proficiency": user.proficiency,
             },
         },
         status=HTTP_201_CREATED,
     )
+
 
 @api_view(["GET"])
 def get_skills(request):
@@ -243,52 +241,88 @@ def send_sms(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            phone_number = data.get("phone_number")
-            skill_name = data.get("skill_name")
-            scheduled_date = data.get("scheduled_date")
-            student = data.get("student")
 
-            if not phone_number or not skill_name or not scheduled_date or not student:
-                return JsonResponse({"error": "Missing required fields"}, status=400)
+            # Validate required fields
+            required_fields = [
+                "phone_number",
+                "skill_name",
+                "scheduled_date",
+                "student",
+            ]
+            if not all(data.get(field) for field in required_fields):
+                return JsonResponse(
+                    {
+                        "error": f"Missing required fields: {', '.join([f for f in required_fields if not data.get(f)])}"
+                    },
+                    status=400,
+                )
 
-            # 🔍 Call `find_match` API to get the teacher
+            # Get teacher info
             match_response = requests.post(
                 "http://127.0.0.1:8000/api/find_match/",
-                json={"learn": skill_name},
+                json={"learn": data["skill_name"]},
                 headers={"Content-Type": "application/json"},
+                timeout=10,  # Add timeout
             )
 
             if match_response.status_code != 200:
                 return JsonResponse(
-                    {"error": f"find_match API failed: {match_response.text}"},
-                    status=500,
+                    {"error": "Teacher matching service unavailable"}, status=503
                 )
 
             match_data = match_response.json().get("match")
             if not match_data:
-                return JsonResponse({"error": "No match found"}, status=404)
+                return JsonResponse(
+                    {"error": "No available teachers for this skill"}, status=404
+                )
 
-            teacher_name = match_data.get("name", "Unknown Teacher")
-
-            message = f"Hello {student}, your Skillbloom session for {skill_name} with {teacher_name} has been scheduled for {scheduled_date}. Thank you!"
-
-            # 📡 Send SMS
-            sms_response = requests.post(
-                SMS_URL,
-                data={"username": USERNAME, "to": phone_number, "message": message},
-                headers={
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Accept": "application/json",
-                    "apiKey": API_KEY,
-                },
+            # Format message
+            message = (
+                f"Hello {data['student']},\n\n"
+                f"Your {data['skill_name']} session with {match_data.get('name', 'our teacher')} "
+                f"is confirmed for {data['scheduled_date']}.\n\n"
+                "Thank you for using SkillBloom!"
             )
 
-            return JsonResponse(sms_response.json(), status=sms_response.status_code)
+            # Send SMS (mock response for testing)
+            if settings.DEBUG:
+                print(f"[DEBUG] Would send SMS to {data['phone_number']}: {message}")
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": "SMS sent (simulated in debug mode)",
+                    },
+                    status=200,
+                )
 
+            # Real SMS sending
+            sms_response = requests.post(
+                SMS_URL,
+                data={
+                    "username": USERNAME,
+                    "to": data["phone_number"],
+                    "message": message[:160],  # Truncate to 160 chars
+                },
+                headers={
+                    "apiKey": API_KEY,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                timeout=10,
+            )
+
+            if sms_response.status_code != 200:
+                raise Exception(f"SMS provider error: {sms_response.text}")
+
+            return JsonResponse(sms_response.json())
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+        except requests.Timeout:
+            return JsonResponse({"error": "Service timeout"}, status=504)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
-    return JsonResponse({"error": "Invalid request method"}, status=405)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
 User = get_user_model()
