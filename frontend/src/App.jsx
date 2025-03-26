@@ -4,9 +4,7 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import SkillExchange from "./pages/SkillExchange";
 import ChatPage from "./pages/Messaging";
-import Dashboard from "./components/Dashboard";
 import LogoutButton from "./components/Logout";
-import ProfileButton from "./components/Profile";
 import LandingPage from "./pages/Landing";
 import UserProfile from "./pages/UserProfile";
 import AboutPage from "./pages/About";
@@ -25,7 +23,6 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/logout" element={<LogoutButton />} />
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/skill-exchange" element={<SkillExchange />} />
           <Route path="/message" element={<ChatPage />} />
           <Route path="/chat/:id" element={<ChatPage />} />
