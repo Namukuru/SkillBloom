@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+<<<<<<< Updated upstream
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -13,6 +14,8 @@ class Skill(models.Model):
 
     def __str__(self):
         return self.name
+=======
+>>>>>>> Stashed changes
 
 
 class CustomUser(AbstractUser):
@@ -22,8 +25,9 @@ class CustomUser(AbstractUser):
         ("expert", "Expert"),
     ]
 
-    email = models.EmailField(unique=True)  # 🔹 Login with email instead of username
+    email = models.EmailField(unique=True)
     fullName = models.CharField(max_length=255, blank=True, null=True)
+<<<<<<< Updated upstream
     skills = models.ManyToManyField(Skill)  # 🔹 Many-to-Many for skills
     #credits = models.IntegerField(default=0)
     fullName = models.CharField(
@@ -31,6 +35,9 @@ class CustomUser(AbstractUser):
     )  # 🔹 Added full_name
     skills = models.ManyToManyField(Skill, blank=True)  # 🔹 Many-to-Many for skills
 
+=======
+    credits = models.IntegerField(default=0)
+>>>>>>> Stashed changes
     proficiency = models.CharField(
         max_length=20,
         choices=PROFICIENCY_LEVELS,
@@ -50,10 +57,11 @@ class CustomUser(AbstractUser):
         blank=True,
     )
 
-    USERNAME_FIELD = "email"  # 🔹 Email is the unique identifier
-    REQUIRED_FIELDS = ["username"]  # 🔹 Keep username required if needed
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username"]
 
     def __str__(self):
+<<<<<<< Updated upstream
         return self.email  # 🔹 Display email as the default representation
     
 
@@ -74,21 +82,40 @@ class CustomUser(AbstractUser):
 def update_badges(sender, instance, **kwargs):
     """Trigger badge check when user is saved."""
     instance.check_and_award_badge()
+=======
+        return self.email
+
+
+class Skill(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+    teachers = models.ManyToManyField(
+        CustomUser, related_name="skills_teaching", blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+# Add this after Skill is defined to resolve circular reference
+CustomUser.add_to_class(
+    "skills", models.ManyToManyField(Skill, related_name="users_with_skill", blank=True)
+)
+>>>>>>> Stashed changes
 
 
 class ScheduledSession(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     teach_skill = models.ForeignKey(
-        Skill, related_name="teachers", on_delete=models.CASCADE
+        Skill, related_name="teaching_sessions", on_delete=models.CASCADE
     )
     learn_skill = models.ForeignKey(
-        Skill, related_name="learners", on_delete=models.CASCADE
+        Skill, related_name="learning_sessions", on_delete=models.CASCADE
     )
-    scheduled_date = (
-        models.DateTimeField()
-    )  # Add this field to store the scheduled date
-    is_completed = models.BooleanField(default=False)  # Track session completion
-    is_rated = models.BooleanField(default=False)  # Track if the session is rated
+    scheduled_date = models.DateTimeField()
+    is_completed = models.BooleanField(default=False)
+    is_rated = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} teaches {self.teach_skill} and learns {self.learn_skill}"
@@ -129,8 +156,8 @@ class Rating(models.Model):
     )
     rating = models.IntegerField(
         choices=[(1, "1"), (2, "2"), (3, "3"), (4, "4"), (5, "5")]
-    )  # Rating from 1 to 5
-    feedback = models.TextField(blank=True, null=True)  # Optional feedback
+    )
+    feedback = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

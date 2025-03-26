@@ -1,3 +1,4 @@
+from venv import logger
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, action, permission_classes
@@ -458,12 +459,67 @@ def scheduled_sessions(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def user_sessions(request):
-    user = request.user  # Get the current user
+    user = request.user
 
-    # Fetch sessions where the user is either the learner or the teacher
-    sessions = ScheduledSession.objects.filter(
-        models.Q(user=user) | models.Q(teach_skill__teachers=user)
-    )
+    try:
+        # Get sessions where user is either the student or teacher
+        sessions = (
+            ScheduledSession.objects.filter(
+                models.Q(user=user) | models.Q(teach_skill__teachers=user)
+            )
+            .select_related("user", "teach_skill", "learn_skill")
+            .prefetch_related("teach_skill__teachers")
+            .order_by("-scheduled_date")
+            .distinct()
+        )
 
-    serializer = SkillMatchSerializer(sessions, many=True)
-    return Response(serializer.data)
+        response_data = {"success": True, "sessions": [], "count": sessions.count()}
+
+        for session in sessions:
+            # Get all teacher IDs for this session's teach_skill
+            teacher_ids = list(
+                session.teach_skill.teachers.values_list("id", flat=True)
+            )
+            is_teacher = user.id in teacher_ids
+
+            # Determine counterpart information
+            if is_teacher:
+                counterpart = {
+                    "id": session.user.id,
+                    "fullName": session.user.fullName,
+                    "email": session.user.email,
+                }
+                role = "teacher"
+            else:
+                first_teacher = session.teach_skill.teachers.first()
+                counterpart = {
+                    "id": first_teacher.id if first_teacher else None,
+                    "fullName": (
+                        first_teacher.fullName if first_teacher else "Unknown Teacher"
+                    ),
+                    "email": first_teacher.email if first_teacher else "",
+                }
+                role = "student"
+
+            session_data = {
+                "id": session.id,
+                "teach_skill": session.teach_skill.name,
+                "learn_skill": session.learn_skill.name,
+                "role": role,
+                "counterpart": counterpart,
+                "scheduled_date": session.scheduled_date.isoformat(),
+                "status": "completed" if session.is_completed else "pending",
+                "is_rated": session.is_rated,
+            }
+            response_data["sessions"].append(session_data)
+
+        return Response(response_data)
+
+    except Exception as e:
+        logger.error(
+            f"Error fetching sessions for user {user.id}: {str(e)}", exc_info=True
+        )
+        return Response(
+            {"success": False, "message": "Error fetching sessions", "error": str(e)},
+            status=500,
+        )
