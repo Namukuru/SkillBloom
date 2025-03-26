@@ -251,20 +251,19 @@ def send_sms(request):
                 "scheduled_date",
                 "student",
             ]
-            if not all(data.get(field) for field in required_fields):
+            missing_fields = [f for f in required_fields if not data.get(f)]
+            if missing_fields:
                 return JsonResponse(
-                    {
-                        "error": f"Missing required fields: {', '.join([f for f in required_fields if not data.get(f)])}"
-                    },
+                    {"error": f"Missing required fields: {', '.join(missing_fields)}"},
                     status=400,
                 )
 
-            # Get teacher info
+            # Get teacher info from your API
             match_response = requests.post(
                 "http://127.0.0.1:8000/api/find_match/",
                 json={"learn": data["skill_name"]},
                 headers={"Content-Type": "application/json"},
-                timeout=10,  # Add timeout
+                timeout=10,
             )
 
             if match_response.status_code != 200:
@@ -278,7 +277,7 @@ def send_sms(request):
                     {"error": "No available teachers for this skill"}, status=404
                 )
 
-            # Format message
+            # Format SMS message
             message = (
                 f"Hello {data['student']},\n\n"
                 f"Your {data['skill_name']} session with {match_data.get('name', 'our teacher')} "
@@ -286,24 +285,13 @@ def send_sms(request):
                 "Thank you for using SkillBloom!"
             )
 
-            # Send SMS (mock response for testing)
-            if settings.DEBUG:
-                print(f"[DEBUG] Would send SMS to {data['phone_number']}: {message}")
-                return JsonResponse(
-                    {
-                        "status": "success",
-                        "message": "SMS sent (simulated in debug mode)",
-                    },
-                    status=200,
-                )
-
-            # Real SMS sending
+            # Send SMS via Africa’s Talking API
             sms_response = requests.post(
                 SMS_URL,
                 data={
                     "username": USERNAME,
                     "to": data["phone_number"],
-                    "message": message[:160],  # Truncate to 160 chars
+                    "message": message[:160],  # Truncate to 160 characters
                 },
                 headers={
                     "apiKey": API_KEY,
@@ -312,10 +300,15 @@ def send_sms(request):
                 timeout=10,
             )
 
-            if sms_response.status_code != 200:
-                raise Exception(f"SMS provider error: {sms_response.text}")
-
-            return JsonResponse(sms_response.json())
+            # Check response from SMS provider
+            if sms_response.status_code == 201:
+                return JsonResponse(
+                    {"status": "success", "message": "SMS sent successfully!"}
+                )
+            else:
+                return JsonResponse(
+                    {"error": f"SMS provider error: {sms_response.text}"}, status=500
+                )
 
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON"}, status=400)

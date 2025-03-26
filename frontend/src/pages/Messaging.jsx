@@ -99,12 +99,12 @@ export default function ChatPage() {
   
       // Prepare session data
       const sessionData = {
-        user_id: userId,
+        user_id: userId, 
         teacher_id: teacherId,
         learn_skill: selectedSkill,
-        scheduled_date: `${scheduledDate}T${scheduledTime}:00`, // ISO format with seconds
-        student_phone: userPhoneNumber,
-        student_name: userName,
+        scheduled_date: new Date(scheduledDate).toISOString(),
+        student_phone: userPhoneNumber, 
+        student_name: userName, 
         status: "pending",
       };
 
@@ -112,7 +112,7 @@ export default function ChatPage() {
 
       // Save session
       const sessionResponse = await axios.post(
-        "http://localhost:8000/api/scheduled-sessions/",
+        "http://localhost:8000/api/scheduled-sessions/", 
         sessionData,
         {
           headers: {
@@ -168,7 +168,7 @@ export default function ChatPage() {
     <div>
       <Navbar />
       <div className="min-h-screen bg-gray-800 p-6 flex flex-col items-center text-white font-mono overflow-hidden relative">
-        {/* Header */}
+                {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
