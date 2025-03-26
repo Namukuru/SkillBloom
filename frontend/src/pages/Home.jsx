@@ -18,7 +18,7 @@ const HomePage = () => {
         >
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="block text-purple-300">SkillBloom</span>
-            <span className="text-xl md:text-2xl font-normal text-gray-200">Where Knowledge Meets Opportunity</span>
+            <span className="text-xl md:text-2xl font-normal text-gray-200">Where Knowledge sharpens Knowledge</span>
           </h1>
           <motion.a
             href="/Login"
@@ -42,7 +42,7 @@ const HomePage = () => {
             <div className="relative space-y-4 bg-gray-900 bg-opacity-80 backdrop-blur-sm p-6 rounded-xl border border-purple-900">
               <h3 className="text-xl font-bold text-purple-300">Today's Featured Skills</h3>
               <ul className="space-y-3">
-                {['UI/UX Design', 'Blockchain Basics', 'Public Speaking'].map((skill, i) => (
+                {['UI/UX Design', 'Frontend Development', 'Backend Development'].map((skill, i) => (
                   <motion.li 
                     key={i}
                     initial={{ x: 20 }}
@@ -69,7 +69,7 @@ const HomePage = () => {
           transition={{ duration: 0.6 }}
           className="text-3xl md:text-4xl font-bold text-center mb-12 text-purple-400"
         >
-          The SkillBloom Difference
+           SkillBloom 
         </motion.h2>
         
         <div className="grid md:grid-cols-3 gap-6">
