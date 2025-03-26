@@ -114,10 +114,11 @@ const Signup = () => {
 
           <select className="w-full p-2 rounded border border-gray-400" name="skills" value={formData.skills} onChange={handleChange} required>
             <option value="">Select a skill</option>
-            <option value="Frontend Development">Frontend Development</option>
+            <option value="Photography">Photography</option>
             <option value="Backend Development">Backend Development</option>
             <option value="UI/UX Design">UI/UX Design</option>
             <option value="Data Science">Data Science</option>
+            <option value="Swimming">Swimming</option>
           </select>
 
           <select className="w-full p-2 rounded border border-gray-400" name="proficiency" value={formData.proficiency} onChange={handleChange} required>
