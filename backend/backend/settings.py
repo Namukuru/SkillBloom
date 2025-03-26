@@ -1,4 +1,5 @@
 from datetime import timedelta
+from datetime import timedelta
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -16,6 +17,7 @@ SECRET_KEY = "django-insecure-p^2e_y!wwebso1i9n3f!o!75uvtv^j*br-2_8uwwjv1yjc$5yo
 DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 # Application definition
 INSTALLED_APPS = [
@@ -29,6 +31,7 @@ INSTALLED_APPS = [
     "corsheaders",  # CORS headers middleware
     "api",  # Your app
     "rest_framework_simplejwt",  # JWT authentication
+    # JWT authentication
 ]
 
 MIDDLEWARE = [
@@ -37,12 +40,15 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "corsheaders.middleware.CorsMiddleware",  # Ensure this is placed here
+    "corsheaders.middleware.CorsMiddleware",  # Ensure this is placed here
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
+# CORS Configuration
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # React frontend
@@ -66,8 +72,27 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # REST framework settings
+CORS_ALLOW_CREDENTIALS = (
+    True  # Allow credentials like cookies or Authorization headers to be sent
+)
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE",
+    "OPTIONS",
+    "PATCH",
+]
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "Authorization",
+    "x-csrftoken",
+]
+
+# REST framework settings
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",  # JWT Authentication
         "rest_framework_simplejwt.authentication.JWTAuthentication",  # JWT Authentication
     ],
     "DEFAULT_PERMISSION_CLASSES": [
@@ -105,6 +130,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "backend.wsgi.application"
 
 # Database Configuration
+# Database Configuration
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -112,6 +138,7 @@ DATABASES = {
     }
 }
 
+# Password validation settings
 # Password validation settings
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -129,6 +156,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Localization settings
+# Localization settings
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
@@ -145,8 +173,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom User Model
+# Custom User Model
 AUTH_USER_MODEL = "api.CustomUser"
 
+# Load environment variables from .env file
+load_dotenv()
 # Load environment variables from .env file
 load_dotenv()
 

@@ -22,7 +22,18 @@ export const sendSMS = async (phoneNumber, skillName, student, scheduledDate, sc
         console.log("✅ SMS sent successfully:", response);
         return response; // Return full response
 
+        console.log("✅ SMS sent successfully:", response);
+        return response; // Return full response
+
     } catch (error) {
+        if (error.response) {
+            console.error("❌ SMS API Error:", error.response.status, error.response.data);
+            alert("SMS Error: " + (error.response.data.error || "Unknown error"));
+        } else {
+            console.error("❌ Network/Server Error:", error.message);
+            alert("Network error: Unable to reach the server");
+        }
+        return null; // Return null on failure
         if (error.response) {
             console.error("❌ SMS API Error:", error.response.status, error.response.data);
             alert("SMS Error: " + (error.response.data.error || "Unknown error"));

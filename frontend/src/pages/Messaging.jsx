@@ -39,6 +39,7 @@ export default function ChatPage() {
     if (message.trim()) {
       setMessages([...messages, { sender: "user", text: message }]);
       setMessage("");
+      setMessage("");
     }
   };
 

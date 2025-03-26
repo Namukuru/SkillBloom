@@ -3,50 +3,64 @@ from django.contrib.auth.hashers import make_password
 from .models import CustomUser, Skill, Badge, Review, ScheduledSession
 import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     skill_names = serializers.ListField(
-        child=serializers.CharField(),
-        write_only=True,
-        required=True
+        child=serializers.CharField(), write_only=True, required=True
     )
-    full_name = serializers.CharField(source='fullName', required=True)
+    full_name = serializers.CharField(source="fullName", required=True)
 
     class Meta:
         model = CustomUser
         fields = [
-            'id', 'username', 'email', 'password',
-            'full_name', 'skill_names', 'proficiency'
+            "id",
+            "username",
+            "email",
+            "password",
+            "full_name",
+            "skill_names",
+            "proficiency",
         ]
         extra_kwargs = {
-            'password': {'write_only': True},
+            "password": {"write_only": True},
         }
-        fields = ["id", "username", "email", "password", "skills", "proficiency", "xp_points", "badges"]	   
+        fields = [
+            "id",
+            "username",
+            "email",
+            "password",
+            "skills",
+            "proficiency",
+            "xp_points",
+            "badges",
+        ]
 
     def create(self, validated_data):
         # Extract skill names
-        skill_names = validated_data.pop('skill_names', [])
-        
+        skill_names = validated_data.pop("skill_names", [])
+
         # Hash password
-        validated_data['password'] = make_password(validated_data['password'])
-        
+        validated_data["password"] = make_password(validated_data["password"])
+
         # Create user
         user = CustomUser.objects.create(**validated_data)
-        
+
         # Add skills
         for skill_name in skill_names:
             skill, created = Skill.objects.get_or_create(name=skill_name)
             user.skills.add(skill)
-        
+
         return user
 
     def to_representation(self, instance):
         """Custom representation to include skill names in response"""
         representation = super().to_representation(instance)
-        representation['skills'] = [skill.name for skill in instance.skills.all()]
+        representation["skills"] = [skill.name for skill in instance.skills.all()]
         return representation
+
 
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
@@ -59,10 +73,14 @@ class BadgeSerializer(serializers.ModelSerializer):
         model = Badge
         fields = ["name", "image"]
 
+        fields = ["name", "image"]
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
+        fields = ["reviewer", "comment", "rating"]
+
         fields = ["reviewer", "comment", "rating"]
 
 
@@ -74,9 +92,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_xp_points(self, obj):
         return obj.xp_points
-    
+
     def get_badges(self, obj):
-        return [badge.name for badge in obj.badges.all()] 
+        return [badge.name for badge in obj.badges.all()]
 
     class Meta:
         model = CustomUser
