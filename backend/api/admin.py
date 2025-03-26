@@ -15,7 +15,7 @@ class CustomUserAdmin(admin.ModelAdmin):
         "fullName",
         "proficiency",
         "get_skills",
-        "credits",
+        "xp_points",
     )  # Show basic user details
     search_fields = ("email", "fullName")  # Enable searching by email & name
     ordering = ("email",)  # Order by email

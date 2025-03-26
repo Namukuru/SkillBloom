@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import { getValidToken } from "../utils/auth"; 
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import { getValidToken } from "../utils/auth";
 
 const UserProfile = () => {
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [error, setError] = useState(null);
-    const [recipient, setRecipient] = useState(""); // Input for recipient
-    const [amount, setAmount] = useState(""); // Input for XP amount
+    const [loading, setLoading] = useState(true);
+    const [recipient, setRecipient] = useState("");
+    const [amount, setAmount] = useState(0);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -27,8 +28,9 @@ const UserProfile = () => {
 
                 setProfile(response.data);
             } catch (err) {
-                console.error("API Error:", err.response ? err.response.data : err.message);
                 setError("Failed to fetch profile.");
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -59,56 +61,37 @@ const UserProfile = () => {
         }
     };
 
+    if (loading) return <div className="flex justify-center items-center h-screen text-white">Loading...</div>;
     if (error) return <div className="flex justify-center items-center h-screen text-red-500">{error}</div>;
-    if (!profile) return null; // Changed from loading message to null
+    if (!profile) return <div className="flex justify-center items-center h-screen text-white">No profile data found.</div>;
 
     return (
-        <div>
+        <div className="bg-gray-900 min-h-screen text-white">
             <Navbar isAuthenticated={true} />
-            <div className="mt-6">
-                <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-                    {/* Profile Header */}
-                    <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-gray-800">{profile.fullName}</h1>
-                        <p className="text-gray-600">Proficiency: <span className="font-semibold">{profile.proficiency}</span></p>
+            <div className="flex justify-center items-center mt-10">
+                <div className="max-w-3xl w-full bg-gray-800 shadow-lg rounded-lg p-8">
+                    <div className="text-center mb-6">
+                        <h1 className="text-3xl font-bold">{profile.fullName}</h1>
+                        <p className="text-gray-400">Email: {profile.email}</p>
+                        <p className="text-gray-400">Skill: {profile.skills}</p>
+                        <p className="text-gray-400">Proficiency: <span className="font-semibold">{profile.proficiency}</span></p>
                     </div>
 
-                    {/* XP Transfer Section */}
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Transfer XP</h2>
-                        <input 
-                            type="text" 
-                            placeholder="Recipient Username"
-                            value={recipient}
-                            onChange={(e) => setRecipient(e.target.value)}
-                            className="border p-2 rounded w-full mb-2"
-                        />
-                        <input 
-                            type="number" 
-                            placeholder="Amount"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            className="border p-2 rounded w-full mb-2"
-                        />
-                        <button 
-                            onClick={transferXP} 
-                            className="bg-blue-500 text-white px-4 py-2 rounded">
-                            Send XP
-                        </button>
-                    </div>
-
-                    {/* User Stats */}
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Your Stats</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-gray-50 p-6 rounded-lg shadow-sm">
-                                <h3 className="text-xl font-semibold text-gray-800">XP Points</h3>
-                                <p className="text-3xl font-bold text-gray-900">{profile.xp_points}</p>
-                            </div>
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-semibold mb-4">Your Stats</h2>
+                        <div className="bg-gray-700 p-6 rounded-lg shadow-md text-center">
+                            <h3 className="text-xl font-semibold">XP Points</h3>
+                            <p className="text-4xl font-bold">{profile.xp_points}</p>
+                            <button
+                                onClick={() => navigate("/transactions")}
+                                className="mt-3 px-3 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 transition"
+                            >
+                                Transfer XP
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div> 
+            </div>
         </div>
     );
 };

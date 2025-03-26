@@ -12,6 +12,7 @@ import UserProfile from "./pages/UserProfile";
 import AboutPage from "./pages/About";
 import SessionsPage from "./pages/Sessions";
 import HomePage from "./pages/Home";
+import TransactionPage from "./components/TransactionPage";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/sessions" element={<SessionsPage />} />
+          <Route path="/transactions" element={<TransactionPage />} />
         </Routes>
         </AuthProvider>
       </Router>

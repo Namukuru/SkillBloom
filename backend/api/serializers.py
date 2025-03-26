@@ -23,6 +23,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True},
         }
+        fields = ["id", "username", "email", "password", "skills", "proficiency", "xp_points", "badges"]	   
 
     def create(self, validated_data):
         # Extract skill names
@@ -73,6 +74,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_xp_points(self, obj):
         return obj.xp_points
+    
+    def get_badges(self, obj):
+        return [badge.name for badge in obj.badges.all()] 
 
     class Meta:
         model = CustomUser
@@ -80,6 +84,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "fullName",
             "proficiency",
             "skills",
+            "email",
             "badges",
             "reviews",
             "xp_points",

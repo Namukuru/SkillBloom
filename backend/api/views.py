@@ -16,6 +16,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import status, viewsets
 from django.db import models
 
+
 # skillmatch imports
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
